@@ -20,7 +20,9 @@ $event.ocsf.metadata = {
   log_level: move $event.fortinet.level,
   log_name: move $event.fortinet.subtype,
   original_time: f"{(move $event.fortinet.date).format_time("%Y-%m-%d")} {move $event.fortinet.time}",
-  original_event_uid: (move $event.fortinet.logid).string(),
+  // FortiGate logid identifies the message type and is reused across events.
+  // It is therefore an event code, not a unique event identifier.
+  event_code: (move $event.fortinet.logid).string(),
   processed_time: now(),
   product: {
     name: "FortiGate",
@@ -77,7 +79,14 @@ if $event.fortinet.severity? != null {
   $event.ocsf.severity_id = 1
 }
 
-// Host profile
+// Host profile. These fields identify the FortiGate that reports the event,
+// which becomes ASIM's Dvc entity after OCSF normalization.
+if $event.fortinet.devname? != null {
+  $event.ocsf.device.hostname = move $event.fortinet.devname
+}
+if $event.fortinet.devid? != null {
+  $event.ocsf.device.uid = move $event.fortinet.devid
+}
 if $event.fortinet.vd? != null {
   $event.ocsf.device.zone = move $event.fortinet.vd
 }

@@ -22,7 +22,7 @@ let $actions = {
 
 $event.ocsf.category_uid = 4
 $event.ocsf.class_uid = 4001
-$event.ocsf.activity_id = $actions[move $event.fortinet.action]? else 0
+$event.ocsf.activity_id = $actions[$event.fortinet.action]? else 0
 $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 
 $event.ocsf.src_endpoint = {
@@ -31,14 +31,25 @@ $event.ocsf.src_endpoint = {
   interface_name: move $event.fortinet.srcintf,
   mac: move $event.fortinet.srcmac?,
 }
+if $event.fortinet.srcname? != null {
+  $event.ocsf.src_endpoint.name = move $event.fortinet.srcname
+}
 
 $event.ocsf.dst_endpoint = {
   ip: move $event.fortinet.dstip,
   port: move $event.fortinet.dstport,
   interface_name: move $event.fortinet.dstintf,
-  // `service` is the application-layer protocol name for the destination port.
-  svc_name: move $event.fortinet.service,
 }
+if $event.fortinet.dstname? != null {
+  $event.ocsf.dst_endpoint.name = move $event.fortinet.dstname
+}
+
+// `service` is the application-layer protocol name identified by FortiGate.
+$event.ocsf.app_protocol_name = move $event.fortinet.service
+
+// A firewall observes the connection between the two endpoints rather than
+// being either endpoint itself.
+$event.ocsf.observation_point_id = 3
 
 // `srcintfrole`/`dstintfrole` are the network zones of the ingress/egress
 // interfaces (e.g. "lan", "wan", "dmz"). Map to endpoint.zone and derive
@@ -62,14 +73,22 @@ if $event.fortinet.srcintfrole? == "lan" and $event.fortinet.dstintfrole? == "wa
 drop $event.fortinet.srcintfrole?
 drop $event.fortinet.dstintfrole?
 
-// `duration` is the session lifetime in seconds; `ocsf.time` is the end.
-$event.ocsf.traffic = {
+// `duration` is the session lifetime in seconds and `ocsf.time` is the end.
+// FortiGate traffic logs are session summaries, so their counters describe
+// cumulative lifetime traffic rather than a single observation interval.
+$event.ocsf.duration = (move $event.fortinet.duration?).seconds().count_milliseconds().round()
+$event.ocsf.end_time = $event.ocsf.time
+$event.ocsf.start_time = $event.ocsf.end_time - $event.ocsf.duration.milliseconds()
+$event.ocsf.cumulative_traffic = {
   bytes_in: move $event.fortinet.rcvdbyte,
   bytes_out: move $event.fortinet.sentbyte,
   packets_in: move $event.fortinet.rcvdpkt?,
   packets_out: move $event.fortinet.sentpkt,
-  end_time: $event.ocsf.time,
-  start_time: $event.ocsf.time - (move $event.fortinet.duration?).seconds(),
+  end_time: $event.ocsf.end_time,
+  start_time: $event.ocsf.start_time,
+  timespan: {
+    duration: $event.ocsf.duration,
+  },
 }
 
 // `trandisp` is the NAT type applied; `transip`/`transport` are the translated
@@ -115,15 +134,34 @@ $event.ocsf.firewall_rule = {
   type: move $event.fortinet.policytype,
 }
 
-// `utmaction` is the outcome of the UTM/IPS engine, distinct from `action`
-// which reflects how the TCP/UDP session itself ended.
+// Normalize the firewall decision. `utmaction` is the UTM/IPS outcome and
+// takes precedence over the session-ending `action` when present.
+$event.ocsf.action_id = 0
+$event.ocsf.disposition_id = 0
+if $event.fortinet.action? in ["accept", "close", "client-rst", "server-rst"] {
+  $event.ocsf.action_id = 1
+  $event.ocsf.disposition_id = 1
+} else if $event.fortinet.action? == "deny" {
+  $event.ocsf.action_id = 2
+  $event.ocsf.disposition_id = 2
+} else if $event.fortinet.action? == "drop" {
+  $event.ocsf.action_id = 2
+  $event.ocsf.disposition_id = 6
+}
 if $event.fortinet.utmaction? != null {
-  let $dispositions = {
+  let $security_actions = {
     allow: 1,
     block: 2,
   }
-  $event.ocsf.disposition_id = $dispositions[move $event.fortinet.utmaction]? else 0
+  let $security_dispositions = {
+    allow: 1,
+    block: 2,
+  }
+  $event.ocsf.action_id = $security_actions[$event.fortinet.utmaction]? else 0
+  $event.ocsf.disposition_id = $security_dispositions[$event.fortinet.utmaction]? else 0
 }
+drop $event.fortinet.action?
+drop $event.fortinet.utmaction?
 
 // `crscore`/`crlevel` are the composite UTM risk score and level.
 fortinet::fortigate::ocsf::risk event=$event
