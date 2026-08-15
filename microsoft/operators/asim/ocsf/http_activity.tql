@@ -7,21 +7,285 @@ args:
       type: field
 ---
 
-$event = {...$event, ocsf: $event, asim: {}}
+$event = {...$event, ocsf: $event}
 
 assert $event.ocsf.class_uid == 4002
 
-microsoft::asim::ocsf::common event=$event
+// WebSession is a superset of NetworkSession. Run the shared network mapper on
+// an isolated copy and retain the original HTTP type UID for source tracing.
+$event.network_session = $event.ocsf
+$event.network_session.class_uid = 4001
+microsoft::asim::ocsf::network_activity event=$event.network_session
+$event.asim = move $event.network_session
 
 @name = "asim.web_session"
 $event.asim.EventSchema = "WebSession"
 $event.asim.EventSchemaVersion = "0.2.7"
 $event.asim.EventType = "HTTPsession"
+if $event.ocsf.api? != null {
+  $event.asim.EventType = "ApiRequest"
+} else if ($event.ocsf.observation_point_id? == 2
+  and $event.ocsf.proxy? == null
+  and $event.ocsf.proxy_endpoint? == null
+  and not ("network_proxy" in ($event.ocsf.metadata?.profiles? else []))) {
+  $event.asim.EventType = "WebServerSession"
+}
+
+// WebSession renames the NetworkSession rule fields.
+if $event.asim.NetworkRuleName? != null {
+  $event.asim.RuleName = move $event.asim.NetworkRuleName
+}
+if $event.asim.NetworkRuleNumber? != null {
+  $event.asim.RuleNumber = move $event.asim.NetworkRuleNumber
+}
+
+// Common WebSession context.
+if $event.ocsf.metadata?.product?.version? != null {
+  $event.asim.EventProductVersion = $event.ocsf.metadata.product.version
+}
+if $event.ocsf.metadata?.log_name? != null {
+  $event.asim.EventOriginalSubType = $event.ocsf.metadata.log_name
+}
+if $event.ocsf.cloud?.org?.name? != null {
+  $event.asim.EventOwner = $event.ocsf.cloud.org.name
+}
+if $event.ocsf.cloud?.account?.name? != null {
+  $event.asim.DvcScope = $event.ocsf.cloud.account.name
+}
+if $event.ocsf.cloud?.account?.uid? != null {
+  $event.asim.DvcScopeId = $event.ocsf.cloud.account.uid
+}
+if $event.ocsf.device?.domain? != null {
+  $event.asim.DvcDomain = $event.ocsf.device.domain
+  $event.asim.DvcDomainType = "FQDN"
+}
+
+// Preserve endpoint domain and device-type context not currently populated by
+// the shared NetworkSession mapping.
+if $event.ocsf.src_endpoint?.domain? != null {
+  $event.asim.SrcDomain = $event.ocsf.src_endpoint.domain
+  $event.asim.SrcDomainType = "FQDN"
+}
+if $event.ocsf.src_endpoint?.type? != null {
+  $event.asim.SrcDeviceType = $event.ocsf.src_endpoint.type
+}
+if $event.ocsf.dst_endpoint?.domain? != null {
+  $event.asim.DstDomain = $event.ocsf.dst_endpoint.domain
+  $event.asim.DstDomainType = "FQDN"
+}
+if $event.ocsf.dst_endpoint?.type? != null {
+  $event.asim.DstDeviceType = $event.ocsf.dst_endpoint.type
+}
+
+// The actor is the client identity and process for HTTP Activity events. It is
+// more precise than an endpoint owner when both are present.
+if $event.ocsf.actor?.user?.email_addr? != null {
+  $event.asim.SrcUsername = $event.ocsf.actor.user.email_addr
+  $event.asim.SrcUsernameType = "UPN"
+} else if $event.ocsf.actor?.user?.name? != null {
+  $event.asim.SrcUsername = $event.ocsf.actor.user.name
+  $event.asim.SrcUsernameType = "Windows" if "\\" in $event.ocsf.actor.user.name else "Simple"
+}
+if $event.ocsf.actor?.user?.uid? != null {
+  $event.asim.SrcUserId = $event.ocsf.actor.user.uid
+  drop $event.asim.SrcUserIdType?
+  if $event.ocsf.actor.user.uid.starts_with("S-") {
+    $event.asim.SrcUserIdType = "SID"
+  } else if $event.ocsf.cloud?.provider? == "Azure" {
+    $event.asim.SrcUserIdType = "AADID"
+  }
+}
+if $event.ocsf.actor?.user?.domain? != null {
+  $event.asim.SrcUserScope = $event.ocsf.actor.user.domain
+}
+if $event.ocsf.metadata?.tenant_uid? != null {
+  $event.asim.SrcUserScopeId = $event.ocsf.metadata.tenant_uid
+}
+match $event.ocsf.actor?.user?.type_id? {
+  1 => {
+    $event.asim.SrcUserType = "Regular"
+  }
+  2 => {
+    $event.asim.SrcUserType = "Admin"
+  }
+  3 => {
+    $event.asim.SrcUserType = "System"
+  }
+  4 => {
+    $event.asim.SrcUserType = "Service"
+  }
+  99 => {
+    $event.asim.SrcUserType = "Other"
+    $event.asim.SrcOriginalUserType = $event.ocsf.actor.user.type?
+  }
+  _ => {}
+}
+if $event.ocsf.actor?.process?.name? != null or $event.ocsf.actor?.process?.path? != null or $event.ocsf.actor?.process?.file?.name? != null {
+  $event.asim.SrcProcessName = $event.ocsf.actor.process.path? else $event.ocsf.actor.process.name? else $event.ocsf.actor.process.file.name
+}
+if $event.ocsf.actor?.process?.pid? != null {
+  $event.asim.SrcProcessId = $event.ocsf.actor.process.pid.string()
+}
+if $event.ocsf.actor?.process?.cpid? != null {
+  $event.asim.SrcProcessGuid = $event.ocsf.actor.process.cpid
+}
+if $event.ocsf.actor?.app_name? != null or $event.ocsf.actor?.app_uid? != null {
+  $event.asim.SrcAppName = $event.ocsf.actor.app_name?
+  $event.asim.SrcAppId = $event.ocsf.actor.app_uid?
+  $event.asim.SrcAppType = "Other"
+} else if $event.ocsf.actor?.process? != null {
+  $event.asim.SrcAppName = $event.asim.SrcProcessName?
+  $event.asim.SrcAppId = $event.asim.SrcProcessId?
+  $event.asim.SrcAppType = "Process"
+}
+if $event.ocsf.api?.service?.name? != null or $event.ocsf.api?.service?.uid? != null {
+  $event.asim.DstAppName = $event.ocsf.api.service.name?
+  $event.asim.DstAppId = $event.ocsf.api.service.uid?
+  $event.asim.DstAppType = "Service"
+} else if $event.ocsf.app_name? != null {
+  $event.asim.DstAppName = $event.ocsf.app_name
+  $event.asim.DstAppType = "Other"
+}
+
+// HTTP request and URL fields.
 $event.asim.Url = $event.ocsf.http_request?.url?.url_string?
+if $event.asim.Url? == null {
+  if $event.asim.EventType == "HTTPsession" and $event.ocsf.http_request?.url?.hostname? != null {
+    $event.url_scheme = $event.ocsf.http_request.url.scheme? else $event.ocsf.app_protocol_name? else "http"
+    $event.asim.Url = f"{$event.url_scheme}://{$event.ocsf.http_request.url.hostname}"
+    if $event.ocsf.http_request.url.port? != null {
+      $event.asim.Url = f"{$event.asim.Url}:{$event.ocsf.http_request.url.port}"
+    }
+    if $event.ocsf.http_request.url.path? != null {
+      $event.asim.Url = f"{$event.asim.Url}{$event.ocsf.http_request.url.path}"
+    }
+  } else if $event.ocsf.http_request?.url?.path? != null {
+    $event.asim.Url = $event.ocsf.http_request.url.path
+  }
+  if $event.asim.Url? != null and $event.ocsf.http_request?.url?.query_string? != null {
+    $event.asim.Url = f"{$event.asim.Url}?{$event.ocsf.http_request.url.query_string}"
+  }
+}
 $event.asim.HttpRequestMethod = $event.ocsf.http_request?.http_method? else $event.ocsf.activity_name?.to_upper()
-$event.asim.EventResultDetails = $event.ocsf.http_response?.code?.string() else $event.ocsf.status_code?.string()
-if $event.ocsf.http_response?.code? != null {
-  $event.asim.EventResult = "Success" if $event.ocsf.http_response.code < 400 else "Failure"
+$event.asim.HttpVersion = $event.ocsf.http_request?.version?
+$event.asim.HttpReferrer = $event.ocsf.http_request?.referrer?
+$event.asim.HttpUserAgent = $event.ocsf.http_request?.user_agent?
+$event.asim.HttpRequestXff = $event.ocsf.http_request?.x_forwarded_for?[0]?
+$event.asim.HttpRequestBodyBytes = $event.ocsf.http_request?.body_length?
+$event.asim.HttpResponseBodyBytes = $event.ocsf.http_response?.body_length?
+$event.asim.HttpResponseTime = $event.ocsf.http_response?.latency?
+$event.asim.HttpContentType = $event.ocsf.http_response?.content_type?
+if $event.asim.HttpContentType? != null {
+  $event.asim.HttpContentFormat = $event.asim.HttpContentType.split(";", max=1)[0]
+}
+if $event.ocsf.http_request?.url?.categories? != null {
+  $event.asim.UrlCategory = $event.ocsf.http_request.url.categories.join(", ")
+}
+
+// ASIM models selected HTTP headers as first-class fields. Header names are
+// case-insensitive, while OCSF retains the producer's original spelling.
+$event.request_headers = $event.ocsf.http_request?.http_headers? else []
+$event.response_headers = $event.ocsf.http_response?.http_headers? else []
+if $event.request_headers.length() > 0 {
+  $event.asim.HttpRequestHeaderCount = $event.request_headers.length()
+}
+if $event.response_headers.length() > 0 {
+  $event.asim.HttpResponseHeaderCount = $event.response_headers.length()
+}
+$event.asim.HttpHost = $event.request_headers.where(h => h.name.to_lower() == "host")[0]?.value? else $event.ocsf.http_request?.url?.hostname?
+$event.asim.HttpRequestCacheControl = $event.request_headers.where(h => h.name.to_lower() == "cache-control")[0]?.value?
+$event.asim.HttpResponseCacheControl = $event.response_headers.where(h => h.name.to_lower() == "cache-control")[0]?.value?
+$event.asim.HttpResponseExpires = $event.response_headers.where(h => h.name.to_lower() == "expires")[0]?.value?
+if $event.ocsf.http_cookies? != null {
+  $event.asim.HttpCookie = $event.ocsf.http_cookies.map(cookie => f"{cookie.name}={cookie.value}").join("; ")
+} else {
+  $event.asim.HttpCookie = $event.request_headers.where(h => h.name.to_lower() == "cookie")[0]?.value?
+}
+$event.asim.HttpIsProxied = ($event.ocsf.proxy? != null
+  or $event.ocsf.proxy_endpoint? != null
+  or "network_proxy" in ($event.ocsf.metadata?.profiles? else [])
+  or "load_balancer" in ($event.ocsf.metadata?.profiles? else []))
+
+// HTTP status drives the normalized result, regardless of the source's generic
+// OCSF status. Preserve textual response context as the original detail.
+$event.http_status = $event.ocsf.http_status? else $event.ocsf.http_response?.code? else $event.ocsf.api?.response?.code?
+if $event.http_status != null {
+  $event.asim.EventResultDetails = $event.http_status.string()
+  $event.asim.EventResult = "Success" if $event.http_status < 400 else "Failure"
+}
+if $event.ocsf.http_response?.status? != null or $event.ocsf.http_response?.message? != null {
+  $event.asim.EventOriginalResultDetails = $event.ocsf.http_response.status? else $event.ocsf.http_response.message
+}
+
+// Uploaded file context and all ASIM-supported digest algorithms.
+$event.asim.FileName = $event.ocsf.file?.name?
+$event.asim.FileSize = $event.ocsf.file?.size?
+$event.asim.FileContentType = $event.ocsf.file?.mime_type?
+$event.asim.FileMD5 = $event.ocsf.file?.hashes?.where(hash => hash.algorithm_id? == 1)[0]?.value?
+$event.asim.FileSHA1 = $event.ocsf.file?.hashes?.where(hash => hash.algorithm_id? == 2)[0]?.value?
+$event.asim.FileSHA256 = $event.ocsf.file?.hashes?.where(hash => hash.algorithm_id? == 3)[0]?.value?
+$event.asim.FileSHA512 = $event.ocsf.file?.hashes?.where(hash => hash.algorithm_id? == 4)[0]?.value?
+if $event.asim.FileSHA512? != null {
+  $event.asim.HashType = "SHA512"
+} else if $event.asim.FileSHA256? != null {
+  $event.asim.HashType = "SHA256"
+} else if $event.asim.FileSHA1? != null {
+  $event.asim.HashType = "SHA1"
+} else if $event.asim.FileMD5? != null {
+  $event.asim.HashType = "MD5"
+}
+
+// Preserve OCSF HTTP and profile details without a dedicated ASIM field.
+if $event.ocsf.http_request?.uid? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_uid = $event.ocsf.http_request.uid
+}
+if $event.ocsf.http_request?.args? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_args = $event.ocsf.http_request.args
+}
+if $event.ocsf.http_request?.length? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_length = $event.ocsf.http_request.length
+}
+if $event.ocsf.http_request?.http_headers? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_headers = $event.ocsf.http_request.http_headers
+}
+if $event.ocsf.http_request?.url? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_url = $event.ocsf.http_request.url
+}
+if $event.ocsf.http_request?.x_forwarded_for? != null {
+  $event.asim.AdditionalFields.ocsf_http_request_x_forwarded_for = $event.ocsf.http_request.x_forwarded_for
+}
+if $event.ocsf.http_response?.length? != null {
+  $event.asim.AdditionalFields.ocsf_http_response_length = $event.ocsf.http_response.length
+}
+if $event.ocsf.http_response?.http_headers? != null {
+  $event.asim.AdditionalFields.ocsf_http_response_headers = $event.ocsf.http_response.http_headers
+}
+if $event.ocsf.http_cookies? != null {
+  $event.asim.AdditionalFields.ocsf_http_cookies = $event.ocsf.http_cookies
+}
+if $event.ocsf.proxy_endpoint? != null {
+  $event.asim.AdditionalFields.ocsf_proxy_endpoint = $event.ocsf.proxy_endpoint
+}
+if $event.ocsf.proxy_connection_info? != null {
+  $event.asim.AdditionalFields.ocsf_proxy_connection_info = $event.ocsf.proxy_connection_info
+}
+if $event.ocsf.proxy_http_request? != null {
+  $event.asim.AdditionalFields.ocsf_proxy_http_request = $event.ocsf.proxy_http_request
+}
+if $event.ocsf.proxy_http_response? != null {
+  $event.asim.AdditionalFields.ocsf_proxy_http_response = $event.ocsf.proxy_http_response
+}
+if $event.ocsf.proxy_traffic? != null {
+  $event.asim.AdditionalFields.ocsf_proxy_traffic = $event.ocsf.proxy_traffic
+}
+if $event.ocsf.api? != null {
+  $event.asim.AdditionalFields.ocsf_api = $event.ocsf.api
+}
+if $event.ocsf.load_balancer? != null {
+  $event.asim.AdditionalFields.ocsf_load_balancer = $event.ocsf.load_balancer
+}
+if $event.ocsf.file? != null {
+  $event.asim.AdditionalFields.ocsf_file = $event.ocsf.file
 }
 
 $event = move $event.asim

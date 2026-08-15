@@ -1,34 +1,317 @@
 from {
+  activity_id: 6,
+  activity_name: "Post",
+  category_uid: 4,
+  class_uid: 4002,
+  class_name: "HTTP Activity",
+  type_uid: 400206,
+  time: 2026-01-01T00:00:05Z,
+  start_time: 2026-01-01T00:00:00Z,
+  end_time: 2026-01-01T00:00:05Z,
+  duration: 5000,
+  severity_id: 2,
+  status: "Failure",
+  count: 2,
+  metadata: {
+    event_code: "proxy-http",
+    log_name: "proxy_access",
+    original_event_uid: "web-proxy-1",
+    product: {
+      name: "Secure Web Gateway",
+      vendor_name: "Example",
+      version: "12.3",
+    },
+    profiles: ["host", "network_proxy", "security_control", "cloud"],
+    tenant_uid: "tenant-1",
+    version: "1.8.0",
+  },
+  cloud: {
+    provider: "Azure",
+    account: {
+      name: "Production",
+      uid: "subscription-1",
+    },
+    org: {
+      name: "Example Org",
+    },
+  },
+  device: {
+    hostname: "proxy1.example.org",
+    domain: "example.org",
+    uid: "proxy-1",
+    zone: "dmz",
+    mac: "00:11:22:33:44:55",
+    desc: "Primary web proxy",
+    interface_name: "eth0",
+    os: {
+      name: "ProxyOS",
+      version: "12.3",
+    },
+  },
+  observation_point_id: 3,
+  action_id: 1,
+  action: "Allowed",
+  disposition_id: 1,
+  disposition: "Allowed",
+  src_endpoint: {
+    ip: 10.0.0.10,
+    port: 54321,
+    hostname: "client.example.org",
+    domain: "example.org",
+    type: "Laptop",
+    interface_name: "lan0",
+    mac: "00:00:5e:00:53:01",
+    zone: "lan",
+    owner: {
+      name: "endpoint-owner",
+      uid: "owner-1",
+    },
+  },
+  dst_endpoint: {
+    ip: 203.0.113.20,
+    port: 443,
+    hostname: "upload.example.net",
+    domain: "example.net",
+    type: "Server",
+    interface_name: "wan0",
+    zone: "internet",
+  },
+  connection_info: {
+    direction_id: 2,
+    flag_history: "ShADadFf",
+    protocol_name: "tcp",
+    protocol_ver_id: 4,
+    uid: "http-session-1",
+  },
+  app_name: "File Upload",
+  app_protocol_name: "https",
+  traffic: {
+    bytes: 10240,
+    bytes_out: 2048,
+    bytes_in: 8192,
+    packets: 15,
+    packets_out: 5,
+    packets_in: 10,
+  },
+  firewall_rule: {
+    name: "allow-uploads",
+    uid: "rule-1",
+  },
+  risk_level: "Medium",
+  risk_score: 50,
+  actor: {
+    app_name: "Upload Client",
+    app_uid: "app-1",
+    user: {
+      email_addr: "alice@example.org",
+      uid: "11111111-2222-3333-4444-555555555555",
+      domain: "example.org",
+      type_id: 1,
+    },
+    process: {
+      cpid: "12345678-1234-1234-1234-123456789abc",
+      name: "uploader",
+      path: "/usr/bin/uploader",
+      pid: 4242,
+    },
+  },
+  http_request: {
+    args: "overwrite=true",
+    body_length: 1024,
+    http_headers: [{
+      name: "Host",
+      value: "upload.example.net",
+    }, {
+      name: "Cache-Control",
+      value: "no-cache",
+    }, {
+      name: "X-Custom",
+      value: "preserved",
+    }],
+    http_method: "POST",
+    length: 1200,
+    referrer: "https://example.org/form",
+    uid: "request-1",
+    url: {
+      categories: ["File Storage/Sharing", "Business/Economy"],
+      hostname: "upload.example.net",
+      path: "/api/upload",
+      query_string: "overwrite=true",
+      scheme: "https",
+    },
+    user_agent: "UploadClient/1.0",
+    version: "2.0",
+    x_forwarded_for: [198.51.100.10],
+  },
+  http_response: {
+    body_length: 8192,
+    code: 201,
+    content_type: "application/json; charset=utf-8",
+    http_headers: [{
+      name: "Cache-Control",
+      value: "max-age=3600, public",
+    }, {
+      name: "Expires",
+      value: "Thu, 01 Dec 2026 16:00:00 GMT",
+    }],
+    latency: 800,
+    length: 8300,
+    status: "Created",
+  },
+  http_cookies: [{
+    name: "session_id",
+    value: "abc123",
+  }, {
+    name: "user_pref",
+    value: "dark_mode",
+  }],
+  file: {
+    name: "report.pdf",
+    size: 1024,
+    mime_type: "application/pdf",
+    type_id: 1,
+    hashes: [{
+      algorithm_id: 1,
+      value: "0123456789abcdef0123456789abcdef",
+    }, {
+      algorithm_id: 2,
+      value: "0123456789abcdef0123456789abcdef01234567",
+    }, {
+      algorithm_id: 3,
+      value: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    }, {
+      algorithm_id: 4,
+      value: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    }],
+  },
+  proxy: {
+    hostname: "proxy1.example.org",
+    ip: 192.0.2.10,
+    port: 8080,
+  },
+  proxy_endpoint: {
+    hostname: "upstream-proxy.example.org",
+    ip: 192.0.2.20,
+    port: 8443,
+  },
+  proxy_connection_info: {
+    protocol_name: "tcp",
+    uid: "proxy-session-1",
+  },
+  proxy_traffic: {
+    bytes_in: 8100,
+    bytes_out: 2100,
+  },
+  tls: {
+    version: "1.3",
+  },
+  unmapped: {
+    policy_group: "employees",
+  },
+}, {
   activity_id: 3,
   activity_name: "Get",
   category_uid: 4,
   class_uid: 4002,
   class_name: "HTTP Activity",
   type_uid: 400203,
-  time: 2026-01-01T00:00:04Z,
+  time: 2026-01-01T00:01:00Z,
   severity_id: 1,
-  status: "Success",
   metadata: {
-    original_event_uid: "web-1",
+    original_event_uid: "web-server-1",
     product: {
-      name: "Proxy",
-      vendor_name: "Microsoft",
+      name: "Web Server",
+      vendor_name: "Example",
     },
+    profiles: ["host"],
     version: "1.8.0",
   },
   device: {
-    hostname: "proxy1",
+    hostname: "www.example.org",
+  },
+  observation_point_id: 2,
+  src_endpoint: {
+    ip: 198.51.100.20,
+    port: 50123,
+  },
+  dst_endpoint: {
+    ip: 10.0.0.20,
+    port: 443,
+    hostname: "www.example.org",
+  },
+  connection_info: {
+    direction_id: 1,
+    protocol_name: "tcp",
   },
   http_request: {
     http_method: "GET",
     url: {
-      url_string: "https://example.org/index.html",
+      path: "/missing",
+      query_string: "from=test",
     },
   },
   http_response: {
-    code: 200,
+    code: 404,
+    status: "Not Found",
+  },
+}, {
+  activity_id: 6,
+  activity_name: "Post",
+  category_uid: 4,
+  class_uid: 4002,
+  class_name: "HTTP Activity",
+  type_uid: 400206,
+  time: 2026-01-01T00:02:00Z,
+  severity_id: 1,
+  metadata: {
+    original_event_uid: "api-1",
+    product: {
+      name: "API Gateway",
+      vendor_name: "Example",
+    },
+    profiles: ["host", "cloud"],
+    version: "1.8.0",
+  },
+  cloud: {
+    provider: "Example Cloud",
+  },
+  device: {
+    hostname: "api.example.org",
+  },
+  src_endpoint: {
+    ip: 198.51.100.30,
+  },
+  dst_endpoint: {
+    ip: 10.0.0.30,
+    hostname: "api.example.org",
+  },
+  http_request: {
+    http_method: "POST",
+    url: {
+      path: "/v1/items",
+    },
+  },
+  http_response: {
+    code: 202,
+  },
+  api: {
+    operation: "CreateItem",
+    request: {
+      uid: "api-request-1",
+    },
+    response: {
+      code: 202,
+    },
+    service: {
+      name: "Items API",
+      uid: "items-api",
+    },
+    version: "v1",
   },
 }
+@name = "ocsf.http_activity"
+ocsf::derive
+ocsf::cast
 microsoft::asim::ocsf::map
 name = @name
 sort EventOriginalUid
