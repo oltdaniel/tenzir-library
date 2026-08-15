@@ -1,0 +1,12 @@
+from_file env("TENZIR_INPUT") {
+  read_lines
+}
+outer = "preserved"
+squid::parse_access field=line, into=squid, format="combined"
+drop line
+squid::ocsf::map event=squid
+assert outer == "preserved"
+assert squid.class_uid == 4002
+this = squid
+ocsf::derive
+ocsf::cast

@@ -1,0 +1,4 @@
+{
+  schemas: 1,
+  events: 6,
+}

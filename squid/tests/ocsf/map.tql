@@ -1,0 +1,7 @@
+from_file env("TENZIR_INPUT") {
+  squid::read_access
+}
+squid::ocsf::map
+ocsf::derive
+ocsf::cast
+sort time, raw_data

@@ -1,0 +1,95 @@
+---
+description: |
+  Parse a selected field as a Squid access-log record.
+
+  The operator supports Squid's built-in `squid`, `common`, `combined`,
+  `referrer`, and `useragent` log formats. It writes the parsed record to
+  `into` and preserves the original value as `raw_data`.
+args:
+  named:
+    - name: field
+      type: field
+      description: The string field that contains the access-log line.
+    - name: into
+      type: field
+      default: this
+      description: The field that receives the parsed access-log record.
+    - name: format
+      type: string
+      default: "squid"
+      description: The built-in Squid log format used by the input.
+---
+
+_squid = {
+  raw_data: $field.string(),
+  logformat: $format,
+}
+
+if _squid.raw_data == null {
+  _squid.parser = {
+    warning: "missing Squid access-log line",
+  }
+} else {
+  match $format {
+    "squid" => {
+      let $pattern = r#"(?<epoch_seconds>[0-9]+)\.(?<milliseconds>[0-9]{3})\s+(?<duration>[0-9]+)\s+(?<client_ip>\S+)\s+(?<cache_status>[^/\s]+)/(?<status_code>[0-9]{3})\s+(?<response_size>[0-9]+)\s+(?<request_method>\S+)\s+(?<url>\S+)\s+(?<username>\S+)\s+(?<hierarchy_status>[^/\s]+)/(?<peer>\S+)\s+(?<content_type>\S+)(?:\s+\[(?<request_headers>.*?)\]\s+\[(?<response_headers>.*?)\])?"#
+      _squid._parsed = _squid.raw_data.parse_grok($pattern, raw=true)
+    }
+    "common" => {
+      let $pattern = r#"(?<client_ip>\S+)\s+-\s+(?<username>\S+)\s+\[(?<timestamp>[^\]]+)\]\s+\"(?<request_method>\S+)\s+(?<url>.*?)\s+HTTP/(?<http_version>[^\"]+)\"\s+(?<status_code>[0-9]{3})\s+(?<response_size>[0-9]+)\s+(?<cache_status>[^:\s]+):(?<hierarchy_status>\S+)(?:\s+\[(?<request_headers>.*?)\]\s+\[(?<response_headers>.*?)\])?"#
+      _squid._parsed = _squid.raw_data.parse_grok($pattern, raw=true)
+    }
+    "combined" => {
+      let $pattern = r#"(?<client_ip>\S+)\s+-\s+(?<username>\S+)\s+\[(?<timestamp>[^\]]+)\]\s+\"(?<request_method>\S+)\s+(?<url>.*?)\s+HTTP/(?<http_version>[^\"]+)\"\s+(?<status_code>[0-9]{3})\s+(?<response_size>[0-9]+)\s+\"(?<referrer>(?:\\.|[^\"])*)\"\s+\"(?<user_agent>(?:\\.|[^\"])*)\"\s+(?<cache_status>[^:\s]+):(?<hierarchy_status>\S+)(?:\s+\[(?<request_headers>.*?)\]\s+\[(?<response_headers>.*?)\])?"#
+      _squid._parsed = _squid.raw_data.parse_grok($pattern, raw=true)
+    }
+    "referrer" => {
+      let $pattern = r#"(?<epoch_seconds>[0-9]+)\.(?<milliseconds>[0-9]{3})\s+(?<client_ip>\S+)\s+(?<referrer>\S+)\s+(?<url>\S+)"#
+      _squid._parsed = _squid.raw_data.parse_grok($pattern, raw=true)
+    }
+    "useragent" => {
+      let $pattern = r#"(?<client_ip>\S+)\s+\[(?<timestamp>[^\]]+)\]\s+\"(?<user_agent>(?:\\.|[^\"])*)\""#
+      _squid._parsed = _squid.raw_data.parse_grok($pattern, raw=true)
+    }
+    _ => {
+      assert false, message=f"unsupported Squid log format: {$format}"
+    }
+  }
+
+  if _squid._parsed? == null {
+    drop _squid._parsed?
+    _squid.parser = {
+      warning: "line does not match the selected Squid log format",
+    }
+  } else {
+    // Seed the union of all supported fields with typed nulls. The parsed
+    // format then overrides the fields it provides while preserving one
+    // stable schema across all successful access-log records.
+    _squid._parsed = _squid._parsed.drop_null_fields()
+    _squid = {
+      time: time(null),
+      duration: duration(null),
+      client_ip: ip(null),
+      cache_status: string(null),
+      status_code: int(null),
+      response_size: int(null),
+      request_method: string(null),
+      url: string(null),
+      username: string(null),
+      hierarchy_status: string(null),
+      peer: string(null),
+      content_type: string(null),
+      http_version: string(null),
+      referrer: string(null),
+      user_agent: string(null),
+      request_headers: string(null),
+      response_headers: string(null),
+      ...move _squid._parsed,
+      logformat: move _squid.logformat,
+      raw_data: move _squid.raw_data,
+    }
+    squid::access::normalize event=_squid
+  }
+}
+
+$into = move _squid

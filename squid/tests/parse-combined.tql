@@ -1,0 +1,4 @@
+from_file env("TENZIR_INPUT") {
+  squid::read_access format="combined"
+}
+sort time, raw_data

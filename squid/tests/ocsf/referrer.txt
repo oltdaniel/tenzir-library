@@ -1,0 +1,36 @@
+{
+  activity_id: 0,
+  activity_name: "Unknown",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    referrer: "https://example.net/ref?q=one",
+    url: {
+      url_string: "http://example.com/search?",
+    },
+  },
+  metadata: {
+    log_format: "referrer",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "1786788730.037 172.17.0.1 https://example.net/ref?q=one http://example.com/search?",
+  raw_data_size: 82,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.17.0.1,
+  },
+  time: 2026-08-15T10:12:10.037Z,
+  type_name: "HTTP Activity: Unknown",
+  type_uid: 400200,
+}

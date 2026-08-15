@@ -1,0 +1,60 @@
+{
+  activity_id: 3,
+  activity_name: "Get",
+  actor: {
+    user: {
+      name: "alice",
+    },
+  },
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    http_method: "GET",
+    referrer: "https://ref.example/",
+    url: {
+      url_string: "https://example.org/download?q=1",
+    },
+    user_agent: "Mozilla/5.0",
+    version: "2",
+  },
+  http_response: {
+    code: 206,
+    length: 1024,
+  },
+  http_status: 206,
+  metadata: {
+    log_format: "combined",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "host",
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "2001:db8::10 - alice [15/Aug/2026:12:00:00 +0200] \"GET https://example.org/download?q=1 HTTP/2\" 206 1024 \"https://ref.example/\" \"Mozilla/5.0\" TCP_HIT:HIER_NONE",
+  raw_data_size: 159,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 2001:db8::10,
+  },
+  status: "Success",
+  status_code: "206",
+  status_id: 1,
+  time: 2026-08-15T10:00:00Z,
+  traffic: {
+    bytes_in: 1024,
+  },
+  type_name: "HTTP Activity: Get",
+  type_uid: 400203,
+  unmapped: {
+    cache_status: "TCP_HIT",
+    hierarchy_status: "HIER_NONE",
+  },
+}

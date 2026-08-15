@@ -1,0 +1,21 @@
+from_file env("TENZIR_INPUT") {
+  read_ndjson
+}
+fork_merge {
+  where format == "squid"
+  squid::parse_access field=line, format="squid"
+}, {
+  where format == "common"
+  squid::parse_access field=line, format="common"
+}, {
+  where format == "combined"
+  squid::parse_access field=line, format="combined"
+}, {
+  where format == "referrer"
+  squid::parse_access field=line, format="referrer"
+}, {
+  where format == "useragent"
+  squid::parse_access field=line, format="useragent"
+}
+schema_id = type_id(this)
+summarize schemas=count_distinct(schema_id), events=count()

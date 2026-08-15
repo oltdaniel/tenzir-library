@@ -1,0 +1,46 @@
+---
+description: Normalize types and missing-value sentinels in a Squid access log.
+args:
+  named:
+    - name: event
+      type: field
+      description: The parsed Squid access-log record.
+---
+
+if $event.epoch_seconds? != null {
+  $event.time = int($event.epoch_seconds).seconds().from_epoch()
+  $event.time = $event.time + int($event.milliseconds).milliseconds()
+  drop $event.epoch_seconds
+  drop $event.milliseconds
+} else if $event.timestamp? != null {
+  $event.time = $event.timestamp.parse_time("%d/%b/%Y:%H:%M:%S %z")
+  drop $event.timestamp
+}
+if $event.duration? != null {
+  $event.duration = int($event.duration).milliseconds()
+}
+if $event.client_ip? != null {
+  $event.client_ip = ip($event.client_ip)
+}
+if $event.status_code? != null {
+  $event.status_code = int($event.status_code)
+}
+if $event.response_size? != null {
+  $event.response_size = int($event.response_size)
+}
+
+if $event.username? == "-" {
+  $event.username = string(null)
+}
+if $event.peer? == "-" {
+  $event.peer = string(null)
+}
+if $event.content_type? == "-" {
+  $event.content_type = string(null)
+}
+if $event.referrer? == "-" {
+  $event.referrer = string(null)
+}
+if $event.user_agent? == "-" {
+  $event.user_agent = string(null)
+}

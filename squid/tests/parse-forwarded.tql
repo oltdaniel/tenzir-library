@@ -1,0 +1,5 @@
+from_file env("TENZIR_INPUT") {
+  read_lines
+}
+hostname = "proxy.example.org"
+squid::parse_access field=line, into=line, format="combined"

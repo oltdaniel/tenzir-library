@@ -1,0 +1,6 @@
+from_file env("TENZIR_INPUT") {
+  squid::read_access format="referrer"
+}
+squid::ocsf::map
+ocsf::derive
+ocsf::cast

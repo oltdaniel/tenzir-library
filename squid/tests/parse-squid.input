@@ -1,0 +1,9 @@
+1786788704.104    224 172.17.0.1 TCP_MISS/200 13291 GET http://www.squid-cache.org/Artwork/SN.png - HIER_DIRECT/104.130.201.120 image/png
+1786788714.220      0 172.17.0.1 TCP_MEM_HIT/200 13301 GET http://www.squid-cache.org/Artwork/SN.png - HIER_NONE/- image/png
+1786788729.613     21 172.17.0.1 TCP_MISS_ABORTED/503 3576 GET http://does-not-exist.invalid/ - HIER_NONE/- text/html
+1786788730.037     59 172.17.0.1 TCP_MISS/404 874 GET http://example.com/search? - HIER_DIRECT/172.66.147.243 text/html
+1786788730.421      0 172.17.0.1 TCP_DENIED/403 3396 GET http://example.com:25/ - HIER_NONE/- text/html
+1786788730.637    226 172.17.0.1 TCP_MISS/503 405 POST http://httpbin.org/post - HIER_DIRECT/98.89.71.26 text/html
+1786788730.922     53 172.17.0.1 TCP_TUNNEL/200 5185 CONNECT example.com:443 - HIER_DIRECT/172.66.147.243 -
+1786788731.425     22 172.17.0.1 TCP_MISS/200 355 HEAD http://example.com/ - HIER_DIRECT/172.66.147.243 text/html
+1786788732.000      1 2001:db8::10 TCP_HIT/200 123 GET http://example.org/ alice HIER_NONE/- text/plain [Host: example.org%0D%0A] [HTTP/1.1 200 OK%0D%0A]

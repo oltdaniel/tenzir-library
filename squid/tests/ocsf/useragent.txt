@@ -1,0 +1,33 @@
+{
+  activity_id: 0,
+  activity_name: "Unknown",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    user_agent: "curl/8.14.1",
+  },
+  metadata: {
+    log_format: "useragent",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "172.17.0.1 [15/Aug/2026:10:12:11 +0000] \"curl/8.14.1\"",
+  raw_data_size: 53,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.17.0.1,
+  },
+  time: 2026-08-15T10:12:11Z,
+  type_name: "HTTP Activity: Unknown",
+  type_uid: 400200,
+}

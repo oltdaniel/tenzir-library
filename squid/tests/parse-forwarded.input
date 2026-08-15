@@ -1,0 +1,1 @@
+2001:db8::10 - alice [15/Aug/2026:12:00:00 +0200] "GET https://example.org/download?q=1 HTTP/2" 206 1024 "https://ref.example/" "Mozilla/5.0" TCP_HIT:HIER_NONE

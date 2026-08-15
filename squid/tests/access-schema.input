@@ -1,0 +1,6 @@
+{"format":"squid","line":"1786788704.104    224 172.17.0.1 TCP_MISS/200 13291 GET http://www.squid-cache.org/Artwork/SN.png - HIER_DIRECT/104.130.201.120 image/png"}
+{"format":"squid","line":"1786788730.922     53 172.17.0.1 TCP_TUNNEL/200 5185 CONNECT example.com:443 - HIER_DIRECT/172.66.147.243 -"}
+{"format":"common","line":"172.17.0.1 - - [15/Aug/2026:10:11:44 +0000] \"GET http://www.squid-cache.org/Artwork/SN.png HTTP/1.1\" 200 13291 TCP_MISS:HIER_DIRECT"}
+{"format":"combined","line":"172.17.0.1 - - [15/Aug/2026:10:11:44 +0000] \"GET http://www.squid-cache.org/Artwork/SN.png HTTP/1.1\" 200 13291 \"https://tenzir.com/library\" \"Tenzir-Squid-Parser/1.0\" TCP_MISS:HIER_DIRECT"}
+{"format":"referrer","line":"1786788704.104 172.17.0.1 https://tenzir.com/ http://www.squid-cache.org/Artwork/SN.png"}
+{"format":"useragent","line":"172.17.0.1 [15/Aug/2026:10:11:44 +0000] \"Tenzir-Squid-Parser/1.0\""}

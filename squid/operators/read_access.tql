@@ -1,0 +1,17 @@
+---
+description: Read and parse a stream of Squid access-log lines.
+args:
+  named:
+    - name: format
+      type: string
+      default: "squid"
+      description: The built-in Squid log format used by the input.
+---
+
+read_lines
+squid::parse_access field=line, format=$format
+if parser? == null {
+  @name = "squid.access"
+} else {
+  @name = "squid.parser_error"
+}

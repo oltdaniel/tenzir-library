@@ -1,0 +1,12 @@
+---
+name: Map Squid access logs to OCSF
+description: Map a growing native access log to OCSF HTTP Activity events.
+---
+
+from_file "/var/log/squid/access.log", watch=true {
+  squid::read_access
+}
+squid::ocsf::map
+ocsf::derive
+ocsf::cast
+publish "ocsf"

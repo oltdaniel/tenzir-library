@@ -1,0 +1,9 @@
+172.17.0.1 - - [15/Aug/2026:10:11:44 +0000] "GET http://www.squid-cache.org/Artwork/SN.png HTTP/1.1" 200 13291 "https://tenzir.com/library" "Tenzir-Squid-Parser/1.0" TCP_MISS:HIER_DIRECT
+172.17.0.1 - - [15/Aug/2026:10:11:54 +0000] "GET http://www.squid-cache.org/Artwork/SN.png HTTP/1.1" 200 13301 "https://tenzir.com/library" "Tenzir-Squid-Parser/1.0" TCP_MEM_HIT:HIER_NONE
+172.17.0.1 - - [15/Aug/2026:10:12:09 +0000] "GET http://does-not-exist.invalid/ HTTP/1.1" 503 3576 "-" "DNS-Failure-Test" TCP_MISS_ABORTED:HIER_NONE
+172.17.0.1 - - [15/Aug/2026:10:12:10 +0000] "GET http://example.com/search? HTTP/1.1" 404 874 "https://example.net/ref?q=one" "Query-Test" TCP_MISS:HIER_DIRECT
+172.17.0.1 - - [15/Aug/2026:10:12:10 +0000] "GET http://example.com:25/ HTTP/1.1" 403 3396 "-" "Denied-Port-Test" TCP_DENIED:HIER_NONE
+172.17.0.1 - - [15/Aug/2026:10:12:10 +0000] "POST http://httpbin.org/post HTTP/1.1" 503 405 "-" "Tenzir Fixture POST" TCP_MISS:HIER_DIRECT
+172.17.0.1 - - [15/Aug/2026:10:12:10 +0000] "CONNECT example.com:443 HTTP/1.1" 200 5185 "-" "Mozilla/5.0 (X11; Linux x86_64) SquidFixture/1.0" TCP_TUNNEL:HIER_DIRECT
+172.17.0.1 - - [15/Aug/2026:10:12:11 +0000] "HEAD http://example.com/ HTTP/1.1" 200 355 "-" "curl/8.14.1" TCP_MISS:HIER_DIRECT
+2001:db8::10 - alice [15/Aug/2026:10:12:12 +0000] "GET http://example.org/ HTTP/1.1" 200 123 "https://ref.example/" "Mozilla/5.0" TCP_HIT:HIER_NONE [Host: example.org%0D%0A] [HTTP/1.1 200 OK%0D%0A]

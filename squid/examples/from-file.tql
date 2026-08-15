@@ -1,0 +1,9 @@
+---
+name: Read the native Squid access log
+description: Read a growing access log that uses Squid's native format.
+---
+
+from_file "/var/log/squid/access.log", watch=true {
+  squid::read_access
+}
+publish "squid"

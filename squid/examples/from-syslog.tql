@@ -1,0 +1,28 @@
+---
+name: Parse forwarded Squid access logs
+description: Parse native Squid access-log lines from RFC 5424 syslog.
+---
+
+accept_udp "udp://0.0.0.0:514"
+this = {...data.parse_syslog(), syslog_raw_data: data}
+squid::parse_access field=message, into=squid
+this = {
+  ...move squid,
+  syslog: {
+    raw_data: move syslog_raw_data,
+    facility: move facility?,
+    severity: move severity?,
+    version: move version?,
+    timestamp: move timestamp?,
+    hostname: move hostname?,
+    app_name: move app_name?,
+    process_id: move process_id?,
+    message_id: move message_id?,
+  },
+}
+if parser? == null {
+  @name = "squid.access"
+} else {
+  @name = "squid.parser_error"
+}
+publish "squid"

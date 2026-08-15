@@ -1,0 +1,20 @@
+id: squid
+name: Squid Proxy
+author: Tenzir
+author_icon: https://raw.githubusercontent.com/tenzir/library/main/.tenzir.svg
+package_icon: https://www.squid-cache.org/Artwork/SN.png
+
+description: |
+  [Squid](https://www.squid-cache.org/) is a caching proxy for HTTP, HTTPS,
+  FTP, and other protocols.
+
+  This package parses access logs that use Squid's built-in `squid`, `common`,
+  `combined`, `referrer`, and `useragent` log formats. Use
+  `squid::read_access` to read access-log byte streams, or use
+  `squid::parse_access` to parse a selected field in a forwarded log record.
+  The `squid::ocsf::map` operator maps parsed records to OCSF 1.9.0 HTTP
+  Activity.
+
+categories:
+- mappings
+- sources

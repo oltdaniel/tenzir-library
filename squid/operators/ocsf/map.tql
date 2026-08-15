@@ -1,0 +1,199 @@
+---
+description: |
+  Map a parsed Squid access-log record to OCSF HTTP Activity.
+
+  Run `ocsf::derive` and `ocsf::cast` after this operator to derive enum names
+  and validate the event against OCSF 1.9.0.
+args:
+  named:
+    - name: event
+      type: field
+      default: this
+      description: The field that holds the parsed Squid access-log record.
+---
+
+$event = {...$event, squid: $event, ocsf: {}}
+
+// --- OCSF: classification attributes ----------
+
+let $methods = {
+  CONNECT: 1,
+  DELETE: 2,
+  GET: 3,
+  HEAD: 4,
+  OPTIONS: 5,
+  POST: 6,
+  PUT: 7,
+  TRACE: 8,
+  PATCH: 9,
+  ACL: 10,
+  "BASELINE-CONTROL": 11,
+  BIND: 12,
+  CHECKIN: 13,
+  CHECKOUT: 14,
+  COPY: 15,
+  LABEL: 16,
+  LINK: 17,
+  LOCK: 18,
+  MERGE: 19,
+  MKACTIVITY: 20,
+  MKCALENDAR: 21,
+  MKCOL: 22,
+  MKREDIRECTREF: 23,
+  MKWORKSPACE: 24,
+  MOVE: 25,
+  ORDERPATCH: 26,
+  PRI: 27,
+  PROPFIND: 28,
+  PROPPATCH: 29,
+  QUERY: 30,
+  REBIND: 31,
+  REPORT: 32,
+  SEARCH: 33,
+  UNBIND: 34,
+  UNCHECKOUT: 35,
+  UNLINK: 36,
+  UNLOCK: 37,
+  UPDATE: 38,
+  UPDATEREDIRECTREF: 39,
+  "VERSION-CONTROL": 40,
+}
+
+$event.squid._method = (move $event.squid.request_method?).to_upper()
+$event.ocsf.activity_id = $methods[$event.squid._method]?
+if $event.squid._method == null {
+  $event.ocsf.activity_id = 0
+} else if $event.ocsf.activity_id == null {
+  $event.ocsf.activity_id = 99
+  $event.ocsf.activity_name = $event.squid._method
+}
+$event.ocsf.category_uid = 4
+$event.ocsf.class_uid = 4002
+$event.ocsf.severity_id = 1
+$event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+
+// --- OCSF: occurrence attributes --------------
+
+$event.ocsf.time = move $event.squid.time
+
+// --- OCSF: context attributes -----------------
+
+$event.ocsf.metadata = {
+  log_format: move $event.squid.logformat,
+  log_name: "access.log",
+  product: {
+    name: "Squid",
+    vendor_name: "Squid Software Foundation",
+  },
+  profiles: ["network_proxy"],
+  version: "1.9.0",
+}
+$event.ocsf.raw_data = move $event.squid.raw_data
+$event.ocsf.raw_data_size = $event.ocsf.raw_data.length_bytes()
+
+if $event.squid.username? != null {
+  $event.ocsf.metadata.profiles = ["host", "network_proxy"]
+  $event.ocsf.actor = {
+    user: {
+      name: move $event.squid.username,
+    },
+  }
+}
+
+// --- OCSF: primary attributes -----------------
+
+$event.ocsf.src_endpoint = {
+  ip: move $event.squid.client_ip,
+}
+
+$event.ocsf.http_request = {}
+if $event.squid._method? != null {
+  $event.ocsf.http_request.http_method = move $event.squid._method
+}
+drop $event.squid._method?
+if $event.squid.referrer? != null {
+  $event.ocsf.http_request.referrer = move $event.squid.referrer
+}
+if $event.squid.url? != null {
+  $event.ocsf.http_request.url = {
+    url_string: move $event.squid.url,
+  }
+}
+if $event.squid.user_agent? != null {
+  $event.ocsf.http_request.user_agent = move $event.squid.user_agent
+}
+if $event.squid.http_version? != null {
+  $event.ocsf.http_request.version = move $event.squid.http_version
+}
+
+if $event.squid.request_headers? != null {
+  $event.squid._request_header_lines = \
+    string((move $event.squid.request_headers).decode_url()).split("\r\n")
+  $event.ocsf.http_request.http_headers = $event.squid._request_header_lines \
+    .where(line => line.contains(":")) \
+    .map(line => line.split(":", max=1)) \
+    .map(parts => {name: parts[0].trim(), value: parts[1].trim()})
+  drop $event.squid._request_header_lines
+}
+
+if $event.squid.status_code? != null {
+  $event.squid._status_code = move $event.squid.status_code
+  $event.ocsf.http_status = $event.squid._status_code
+  $event.ocsf.status_code = $event.squid._status_code.string()
+  if $event.squid._status_code >= 200 and $event.squid._status_code < 400 {
+    $event.ocsf.status_id = 1
+  } else if $event.squid._status_code >= 400 and $event.squid._status_code < 600 {
+    $event.ocsf.status_id = 2
+  } else {
+    $event.ocsf.status_id = 0
+  }
+  $event.ocsf.http_response = {
+    code: $event.squid._status_code,
+  }
+  if $event.squid.content_type? != null {
+    $event.ocsf.http_response.content_type = move $event.squid.content_type
+  }
+  if $event.squid.duration? != null {
+    $event.ocsf.http_response.latency = \
+      count_milliseconds(move $event.squid.duration).round()
+  }
+  if $event.squid.response_size? != null {
+    $event.ocsf.http_response.length = $event.squid.response_size
+  }
+  drop $event.squid._status_code
+}
+
+if $event.squid.response_headers? != null {
+  $event.squid._response_header_lines = \
+    string((move $event.squid.response_headers).decode_url()).split("\r\n")
+  $event.squid._response_status_lines = $event.squid._response_header_lines \
+    .where(line => line.starts_with("HTTP/"))
+  if $event.squid._response_status_lines.length() > 0 {
+    $event.ocsf.http_response.message = $event.squid._response_status_lines[0]
+  }
+  $event.squid._response_headers = $event.squid._response_header_lines \
+    .where(line => line.contains(":")) \
+    .map(line => line.split(":", max=1)) \
+    .map(parts => {name: parts[0].trim(), value: parts[1].trim()})
+  if $event.squid._response_headers.length() > 0 {
+    $event.ocsf.http_response.http_headers = $event.squid._response_headers
+  }
+  drop $event.squid._response_header_lines
+  drop $event.squid._response_status_lines
+  drop $event.squid._response_headers
+}
+
+if $event.squid.response_size? != null {
+  $event.ocsf.traffic = {
+    bytes_in: move $event.squid.response_size,
+  }
+}
+
+// Preserve Squid-specific cache and hierarchy details for downstream use.
+$event.squid = $event.squid.drop_null_fields()
+if $event.squid.is_empty() == false {
+  $event = {...$event.ocsf, unmapped: $event.squid}
+} else {
+  $event = move $event.ocsf
+}
+@name = "ocsf.http_activity"

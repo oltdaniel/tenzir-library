@@ -1,0 +1,236 @@
+{
+  activity_id: 3,
+  activity_name: "Get",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    http_method: "GET",
+    url: {
+      url_string: "http://www.squid-cache.org/Artwork/SN.png",
+    },
+  },
+  http_response: {
+    code: 200,
+    content_type: "image/png",
+    latency: 224,
+    length: 13291,
+  },
+  http_status: 200,
+  metadata: {
+    log_format: "squid",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "1786788704.104    224 172.17.0.1 TCP_MISS/200 13291 GET http://www.squid-cache.org/Artwork/SN.png - HIER_DIRECT/104.130.201.120 image/png",
+  raw_data_size: 137,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.17.0.1,
+  },
+  status: "Success",
+  status_code: "200",
+  status_id: 1,
+  time: 2026-08-15T10:11:44.104Z,
+  traffic: {
+    bytes_in: 13291,
+  },
+  type_name: "HTTP Activity: Get",
+  type_uid: 400203,
+  unmapped: {
+    cache_status: "TCP_MISS",
+    hierarchy_status: "HIER_DIRECT",
+    peer: "104.130.201.120",
+  },
+}
+{
+  activity_id: 3,
+  activity_name: "Get",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    http_method: "GET",
+    url: {
+      url_string: "http://example.com:25/",
+    },
+  },
+  http_response: {
+    code: 403,
+    content_type: "text/html",
+    latency: 0,
+    length: 3396,
+  },
+  http_status: 403,
+  metadata: {
+    log_format: "squid",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "1786788730.421      0 172.17.0.1 TCP_DENIED/403 3396 GET http://example.com:25/ - HIER_NONE/- text/html",
+  raw_data_size: 103,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.17.0.1,
+  },
+  status: "Failure",
+  status_code: "403",
+  status_id: 2,
+  time: 2026-08-15T10:12:10.421Z,
+  traffic: {
+    bytes_in: 3396,
+  },
+  type_name: "HTTP Activity: Get",
+  type_uid: 400203,
+  unmapped: {
+    cache_status: "TCP_DENIED",
+    hierarchy_status: "HIER_NONE",
+  },
+}
+{
+  activity_id: 1,
+  activity_name: "Connect",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    http_method: "CONNECT",
+    url: {
+      url_string: "example.com:443",
+    },
+  },
+  http_response: {
+    code: 200,
+    latency: 53,
+    length: 5185,
+  },
+  http_status: 200,
+  metadata: {
+    log_format: "squid",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "1786788730.922     53 172.17.0.1 TCP_TUNNEL/200 5185 CONNECT example.com:443 - HIER_DIRECT/172.66.147.243 -",
+  raw_data_size: 107,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.17.0.1,
+  },
+  status: "Success",
+  status_code: "200",
+  status_id: 1,
+  time: 2026-08-15T10:12:10.922Z,
+  traffic: {
+    bytes_in: 5185,
+  },
+  type_name: "HTTP Activity: Connect",
+  type_uid: 400201,
+  unmapped: {
+    cache_status: "TCP_TUNNEL",
+    hierarchy_status: "HIER_DIRECT",
+    peer: "172.66.147.243",
+  },
+}
+{
+  activity_id: 3,
+  activity_name: "Get",
+  actor: {
+    user: {
+      name: "alice",
+    },
+  },
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  http_request: {
+    http_headers: [
+      {
+        name: "Host",
+        value: "example.org",
+      },
+      {
+        name: "X-Test",
+        value: "one:two",
+      },
+    ],
+    http_method: "GET",
+    url: {
+      url_string: "http://example.org/",
+    },
+  },
+  http_response: {
+    code: 200,
+    content_type: "text/plain",
+    http_headers: [
+      {
+        name: "Cache-Control",
+        value: "max-age=60",
+      },
+    ],
+    latency: 1,
+    length: 123,
+    message: "HTTP/1.1 200 OK",
+  },
+  http_status: 200,
+  metadata: {
+    log_format: "squid",
+    log_name: "access.log",
+    product: {
+      name: "Squid",
+      vendor_name: "Squid Software Foundation",
+    },
+    profiles: [
+      "host",
+      "network_proxy",
+    ],
+    version: "1.9.0",
+  },
+  raw_data: "1786788732.000      1 2001:db8::10 TCP_HIT/200 123 GET http://example.org/ alice HIER_NONE/- text/plain [Host: example.org%0D%0AX-Test: one%3Atwo%0D%0A] [HTTP/1.1 200 OK%0D%0ACache-Control: max-age%3D60%0D%0A]",
+  raw_data_size: 209,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 2001:db8::10,
+  },
+  status: "Success",
+  status_code: "200",
+  status_id: 1,
+  time: 2026-08-15T10:12:12Z,
+  traffic: {
+    bytes_in: 123,
+  },
+  type_name: "HTTP Activity: Get",
+  type_uid: 400203,
+  unmapped: {
+    cache_status: "TCP_HIT",
+    hierarchy_status: "HIER_NONE",
+  },
+}
