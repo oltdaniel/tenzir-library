@@ -1,0 +1,13 @@
+from_file f"{env("TENZIR_INPUTS")}/*.txt" {
+  read_lines
+}
+fortinet = line.parse_kv()
+fortinet::fortigate::ocsf::map event=fortinet
+this = fortinet
+ocsf::derive
+ocsf::cast
+// Base Event and Email Activity have no ASIM schema; see the FortiGate → ASIM
+// example. Every other class FortiGate produces must reach an ASIM table.
+where class_uid not in [0, 4009]
+microsoft::asim::ocsf::map
+sort

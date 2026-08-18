@@ -2220,6 +2220,59 @@
 {
   activity_id: 1,
   activity_name: "Create",
+  actor: {
+    user: {
+      name: "admin",
+    },
+  },
+  category_name: "Identity & Access Management",
+  category_uid: 3,
+  class_name: "Account Change",
+  class_uid: 3001,
+  device: {
+    zone: "root",
+  },
+  message: "Add user.local jdoe",
+  metadata: {
+    event_code: "100044547",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "system",
+    original_time: "2025-08-07 16:52:41 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2025-08-07 time=16:52:41 eventtime=1754599961034127880 tz=\"-0400\" logid=\"0100044547\" type=\"event\" subtype=\"system\" level=\"information\" vd=\"root\" logdesc=\"Object attribute configured\" user=\"admin\" ui=\"ssh(172.25.188.116)\" action=\"Add\" cfgtid=129237201 cfgpath=\"user.local\" cfgobj=\"jdoe\" cfgattr=\"type[password]\" msg=\"Add user.local jdoe\"",
+  raw_data_size: 341,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.25.188.116,
+  },
+  status_detail: "Object attribute configured",
+  time: 2025-08-07T20:52:41.034127880Z,
+  timezone_offset: -240,
+  type_name: "Account Change: Create",
+  type_uid: 300101,
+  unmapped: {
+    ui: "ssh(172.25.188.116)",
+    cfgtid: 129237201,
+    cfgattr: "type[password]",
+  },
+  user: {
+    name: "jdoe",
+  },
+}
+{
+  activity_id: 1,
+  activity_name: "Create",
   category_name: "Findings",
   category_uid: 2,
   class_name: "Detection Finding",
@@ -3713,6 +3766,165 @@
   },
 }
 {
+  activity_id: 3,
+  activity_name: "Update",
+  actor: {
+    user: {
+      name: "admin",
+    },
+  },
+  category_name: "Identity & Access Management",
+  category_uid: 3,
+  class_name: "Entity Management",
+  class_uid: 3004,
+  device: {
+    zone: "root",
+  },
+  entity: {
+    data: "as[0->65001]",
+    name: "router.bgp",
+    type: "Other",
+    type_id: 99,
+  },
+  message: "Edit router.bgp",
+  metadata: {
+    event_code: "100044546",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "router",
+    original_time: "2025-08-07 17:03:19 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2025-08-07 time=17:03:19 eventtime=1754600599412885017 tz=\"-0400\" logid=\"0100044546\" type=\"event\" subtype=\"router\" level=\"information\" vd=\"root\" logdesc=\"Attribute configured\" user=\"admin\" ui=\"GUI(172.25.188.116)\" action=\"Edit\" cfgtid=129237310 cfgpath=\"router.bgp\" cfgattr=\"as[0->65001]\" msg=\"Edit router.bgp\"",
+  raw_data_size: 315,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.25.188.116,
+  },
+  status_detail: "Attribute configured",
+  time: 2025-08-07T21:03:19.412885017Z,
+  timezone_offset: -240,
+  type_name: "Entity Management: Update",
+  type_uid: 300403,
+  unmapped: {
+    ui: "GUI(172.25.188.116)",
+    cfgtid: 129237310,
+  },
+}
+{
+  activity_id: 3,
+  activity_name: "Update",
+  actor: {
+    user: {
+      name: "admin",
+    },
+  },
+  category_name: "Identity & Access Management",
+  category_uid: 3,
+  class_name: "Entity Management",
+  class_uid: 3004,
+  device: {
+    zone: "root",
+  },
+  entity: {
+    data: "status[disable->enable]",
+    name: "log.disk.setting",
+    type: "Other",
+    type_id: 99,
+  },
+  message: "Edit log.disk.setting",
+  metadata: {
+    event_code: "100044546",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "system",
+    original_time: "2025-08-07 16:46:13 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2025-08-07 time=16:46:13 eventtime=1754599574198656264 tz=\"-0400\" logid=\"0100044546\" type=\"event\" subtype=\"system\" level=\"information\" vd=\"root\" logdesc=\"Attribute configured\" user=\"admin\" ui=\"GUI(172.25.188.116)\" action=\"Edit\" cfgtid=129237135 cfgpath=\"log.disk.setting\" cfgattr=\"status[disable->enable]\" msg=\"Edit log.disk.setting\"",
+  raw_data_size: 338,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 172.25.188.116,
+  },
+  status_detail: "Attribute configured",
+  time: 2025-08-07T20:46:14.198656264Z,
+  timezone_offset: -240,
+  type_name: "Entity Management: Update",
+  type_uid: 300403,
+  unmapped: {
+    ui: "GUI(172.25.188.116)",
+    cfgtid: 129237135,
+  },
+}
+{
+  activity_id: 5,
+  activity_name: "Delete",
+  actor: {
+    user: {
+      name: "admin",
+    },
+  },
+  category_name: "Identity & Access Management",
+  category_uid: 3,
+  class_name: "Group Management",
+  class_uid: 3006,
+  device: {
+    zone: "root",
+  },
+  group: {
+    name: "contractors",
+  },
+  message: "Delete user.group contractors",
+  metadata: {
+    event_code: "100044547",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "system",
+    original_time: "2025-08-07 16:55:02 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2025-08-07 time=16:55:02 eventtime=1754600102771903221 tz=\"-0400\" logid=\"0100044547\" type=\"event\" subtype=\"system\" level=\"information\" vd=\"root\" logdesc=\"Object attribute configured\" user=\"admin\" ui=\"jsconsole\" action=\"Delete\" cfgtid=129237244 cfgpath=\"user.group\" cfgobj=\"contractors\" msg=\"Delete user.group contractors\"",
+  raw_data_size: 326,
+  severity: "Informational",
+  severity_id: 1,
+  status_detail: "Object attribute configured",
+  time: 2025-08-07T20:55:02.771903221Z,
+  timezone_offset: -240,
+  type_name: "Group Management: Delete",
+  type_uid: 300605,
+  unmapped: {
+    ui: "jsconsole",
+    cfgtid: 129237244,
+  },
+}
+{
   activity_id: 5,
   activity_name: "Refuse",
   app_name: "Dailymotion",
@@ -3879,8 +4091,10 @@
   dst_endpoint: {
     interface_name: "port23",
     ip: 172.16.200.44,
+    owner: {
+      name: "root",
+    },
     port: 22,
-    uid: "root",
   },
   firewall_rule: {
     uid: "1",

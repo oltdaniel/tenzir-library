@@ -1,0 +1,1 @@
+date=2025-08-07 time=17:03:19 eventtime=1754600599412885017 tz="-0400" logid="0100044546" type="event" subtype="router" level="information" vd="root" logdesc="Attribute configured" user="admin" ui="GUI(172.25.188.116)" action="Edit" cfgtid=129237310 cfgpath="router.bgp" cfgattr="as[0->65001]" msg="Edit router.bgp"

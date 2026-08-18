@@ -158,7 +158,11 @@ if $event.ocsf.metadata.type == "utm" {
 } else if $event.ocsf.metadata.type == "traffic" {
   fortinet::fortigate::ocsf::logs::traffic event=$event
 } else if $event.ocsf.metadata.type == "event" {
-  if $event.ocsf.metadata.log_name == "user" {
+  // Administrative configuration changes appear under several event subtypes
+  // and are recognizable by `cfgpath`, the configuration table they touched.
+  if $event.fortinet.cfgpath? != null {
+    fortinet::fortigate::ocsf::logs::config event=$event
+  } else if $event.ocsf.metadata.log_name == "user" {
     fortinet::fortigate::ocsf::logs::authentication event=$event
   } else if $event.ocsf.metadata.log_name == "system" {
     // Only admin login/logout events map to Authentication; subtype="system"

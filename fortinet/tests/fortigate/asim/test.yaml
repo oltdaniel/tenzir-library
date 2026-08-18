@@ -1,0 +1,5 @@
+# The end-to-end check maps FortiGate logs through OCSF into ASIM, so it needs
+# the Microsoft package that owns the OCSF → ASIM mappers alongside this one.
+package-dirs:
+  - ../../../../microsoft
+inputs: ../inputs

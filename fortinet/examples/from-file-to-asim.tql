@@ -1,0 +1,20 @@
+---
+name: FortiGate → ASIM
+description: Parse FortiGate logs, map them through OCSF, and convert them to Microsoft Sentinel ASIM.
+---
+
+from_file "fortigate.log" {
+  read_lines
+}
+fortinet = line.parse_kv()
+fortinet::fortigate::ocsf::map event=fortinet
+fortinet.raw_data = move line
+fortinet.raw_data_size = fortinet.raw_data.length_bytes()
+this = fortinet
+ocsf::derive
+ocsf::cast
+// ASIM has no schema for email activity, nor for the device health and
+// housekeeping logs that stay Base Events, so those classes are dropped here
+// rather than being reported as unsupported for every event.
+where class_uid not in [0, 4009]
+microsoft::asim::ocsf::map

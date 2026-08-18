@@ -1,0 +1,94 @@
+---
+description: >-
+  FortiGate configuration change logs → OCSF Entity Management (3004),
+  Account Change (3001), or Group Management (3006)
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+// FortiGate records administrative configuration changes under several event
+// subtypes (system, router, sdwan, switch-controller, ...). What they share is
+// `cfgpath`, the configuration table that was touched, and that path decides
+// the OCSF class: changes below `user.local` and `user.group` are account and
+// group management, everything else is generic entity management. FortiGate has
+// no dedicated user-management log type — creating a local user *is* a
+// configuration change to the `user.local` table.
+
+// The administrator who made the change.
+if $event.fortinet.user? != null {
+  $event.ocsf.actor = {
+    user: {
+      name: move $event.fortinet.user,
+    },
+  }
+}
+
+// `ui` names the management interface and, when the session came over the
+// network, embeds the administrator's address: "GUI(172.25.188.116)" or
+// "ssh(10.0.0.1)". Local access methods such as "jsconsole" carry no address,
+// and the parentheses can hold a non-address such as "GUI(local)", so require
+// something address-shaped rather than parsing whatever is in there.
+// Only the address is consumed here; `ui` itself stays in `unmapped`.
+if $event.fortinet.ui?.match_regex(r"\([0-9a-fA-F.:]+\)$") == true {
+  $event.ocsf.src_endpoint = {
+    ip: $event.fortinet.ui.split("(")[1].trim_end(")").ip(),
+  }
+}
+
+// `cfgobj` is the object that changed; changes to a global setting report only
+// the `cfgpath` table they live in.
+$event.config_object = move $event.fortinet.cfgobj?
+
+if $event.fortinet.cfgpath.starts_with("user.local") {
+  @name = "ocsf.account_change"
+  $event.ocsf.category_uid = 3
+  $event.ocsf.class_uid = 3001
+  // Account Change has no Update activity, so edits fall through to Other and
+  // ASIM records them as UserModified.
+  let $account_activities = {Add: 1, Delete: 6}
+  $event.ocsf.activity_id = $account_activities[$event.fortinet.action?]? else 99
+  $event.ocsf.user = {
+    name: move $event.config_object,
+  }
+  drop $event.fortinet.cfgpath
+} else if $event.fortinet.cfgpath.starts_with("user.group") {
+  @name = "ocsf.group_management"
+  $event.ocsf.category_uid = 3
+  $event.ocsf.class_uid = 3006
+  let $group_activities = {Add: 6, Delete: 5}
+  $event.ocsf.activity_id = $group_activities[$event.fortinet.action?]? else 99
+  $event.ocsf.group = {
+    name: move $event.config_object,
+  }
+  drop $event.fortinet.cfgpath
+} else {
+  @name = "ocsf.entity_management"
+  $event.ocsf.category_uid = 3
+  $event.ocsf.class_uid = 3004
+  let $entity_activities = {Add: 1, Edit: 3, Delete: 4}
+  $event.ocsf.activity_id = $entity_activities[$event.fortinet.action?]? else 0
+  // Qualify the object with the configuration table it lives in, the way
+  // FortiGate's own `msg` reads ("Edit firewall.policy 12"), so the audit
+  // record names the setting unambiguously.
+  $event.config_path = move $event.fortinet.cfgpath
+  $event.ocsf.entity = {
+    name: $event.config_path,
+    // `type_id` is a small OCSF enum, so only a firewall policy has a faithful
+    // member; the remaining configuration tables are Other.
+    type_id: 5 if $event.config_path.starts_with("firewall.policy") else 99,
+  }
+  if $event.config_object != null {
+    $event.ocsf.entity.name = f"{$event.config_path}/{$event.config_object}"
+  }
+  drop $event.config_path
+  // `cfgattr` describes the change itself, e.g. "status[disable->enable]".
+  if $event.fortinet.cfgattr? != null {
+    $event.ocsf.entity.data = move $event.fortinet.cfgattr
+  }
+}
+$event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+drop $event.config_object?
+drop $event.fortinet.action?

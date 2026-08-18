@@ -1,0 +1,1 @@
+date=2025-08-07 time=16:55:02 eventtime=1754600102771903221 tz="-0400" logid="0100044547" type="event" subtype="system" level="information" vd="root" logdesc="Object attribute configured" user="admin" ui="jsconsole" action="Delete" cfgtid=129237244 cfgpath="user.group" cfgobj="contractors" msg="Delete user.group contractors"

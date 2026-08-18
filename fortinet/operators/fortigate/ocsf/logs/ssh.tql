@@ -25,9 +25,13 @@ drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
 
-// `login` is the remote username used for the SSH session.
+// `login` is the remote username the session authenticates as. It belongs to
+// the destination endpoint's owner rather than its `uid`, which identifies the
+// host; ASIM reads the owner as DstUsername.
 if $event.fortinet.login? != null {
-  $event.ocsf.dst_endpoint.uid = move $event.fortinet.login
+  $event.ocsf.dst_endpoint.owner = {
+    name: move $event.fortinet.login,
+  }
 }
 
 fortinet::fortigate::ocsf::connection_info event=$event
