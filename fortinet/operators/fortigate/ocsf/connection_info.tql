@@ -1,8 +1,10 @@
 ---
 description: >-
   Common FortiGate connection fields → OCSF connection_info.
-  Maps proto → protocol_num, sessionid → uid (optional), and
-  direction (incoming/outgoing) → direction_id.
+  Maps proto → protocol_num, sessionid → uid (optional), and derives
+  direction_id from the interface roles carried on the endpoint zones.
+
+  Call this after the endpoint zones are set so the direction can see them.
 args:
   named:
     - name: event
@@ -17,9 +19,23 @@ $event.ocsf.connection_info = {
 if $event.fortinet.sessionid? != null {
   $event.ocsf.connection_info.uid = (move $event.fortinet.sessionid).string()
 }
-if $event.fortinet.direction? == "incoming" {
+
+// FortiGate interface roles say which side of the firewall each endpoint sits
+// on: `wan` is the untrusted side while `lan` and `dmz` are internal. The roles
+// reach us as endpoint zones, and the uninformative `undefined` role is already
+// null by then. A wan-to-wan session is neither inbound, outbound, nor lateral,
+// so it stays Unknown.
+//
+// The FortiGate `direction` field is deliberately not used here: it reports the
+// attack direction of the inspected payload (server-to-client vs.
+// client-to-server), not the direction in which the session was opened. Two
+// records of the same session can carry opposite values, so it stays in
+// `unmapped`.
+let $internal_zones = ["lan", "dmz"]
+if $event.ocsf.src_endpoint.zone? == "wan" and $event.ocsf.dst_endpoint.zone? in $internal_zones {
   $event.ocsf.connection_info.direction_id = 1
-} else if $event.fortinet.direction? == "outgoing" {
+} else if $event.ocsf.src_endpoint.zone? in $internal_zones and $event.ocsf.dst_endpoint.zone? == "wan" {
   $event.ocsf.connection_info.direction_id = 2
+} else if $event.ocsf.src_endpoint.zone? in $internal_zones and $event.ocsf.dst_endpoint.zone? in $internal_zones {
+  $event.ocsf.connection_info.direction_id = 3
 }
-drop $event.fortinet.direction?

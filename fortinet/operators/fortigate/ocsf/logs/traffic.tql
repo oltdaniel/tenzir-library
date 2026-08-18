@@ -52,26 +52,16 @@ $event.ocsf.app_protocol_name = move $event.fortinet.service
 $event.ocsf.observation_point_id = 3
 
 // `srcintfrole`/`dstintfrole` are the network zones of the ingress/egress
-// interfaces (e.g. "lan", "wan", "dmz"). Map to endpoint.zone and derive
-// connection direction from the pairing when possible.
+// interfaces (e.g. "lan", "wan", "dmz").
 if $event.fortinet.srcintfrole? != null {
-  $event.ocsf.src_endpoint.zone = $event.fortinet.srcintfrole
+  $event.ocsf.src_endpoint.zone = move $event.fortinet.srcintfrole
 }
 if $event.fortinet.dstintfrole? != null {
-  $event.ocsf.dst_endpoint.zone = $event.fortinet.dstintfrole
+  $event.ocsf.dst_endpoint.zone = move $event.fortinet.dstintfrole
 }
-$event.ocsf.connection_info = {
-  protocol_num: move $event.fortinet.proto,
-  uid: (move $event.fortinet.sessionid).string(),
-  direction_id: 0,
-}
-if $event.fortinet.srcintfrole? == "lan" and $event.fortinet.dstintfrole? == "wan" {
-  $event.ocsf.connection_info.direction_id = 2  // Outbound
-} else if $event.fortinet.srcintfrole? == "wan" and $event.fortinet.dstintfrole? == "lan" {
-  $event.ocsf.connection_info.direction_id = 1  // Inbound
-}
-drop $event.fortinet.srcintfrole?
-drop $event.fortinet.dstintfrole?
+
+// Derives the session direction from those zones.
+fortinet::fortigate::ocsf::connection_info event=$event
 
 // `duration` is the session lifetime in seconds and `ocsf.time` is the end.
 // FortiGate traffic logs are session summaries, so their counters describe

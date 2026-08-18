@@ -18,11 +18,6 @@ if $event.fortinet.hostname? != null {
   $event.ocsf.dst_endpoint.hostname = (move $event.fortinet.hostname).string()
 }
 
-// `direction` in Detection Finding logs (IPS, virus, DLP) describes the
-// inspected packet's orientation relative to the UTM engine, not the network
-// session direction. Dropping it here prevents it from inverting direction_id
-// for sessions whose actual direction can be inferred from intfroles.
-drop $event.fortinet.direction?
 fortinet::fortigate::ocsf::connection_info event=$event
 
 // Only emit evidences when at least one endpoint IP is present; an all-null

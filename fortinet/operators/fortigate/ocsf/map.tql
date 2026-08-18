@@ -15,6 +15,26 @@ replace $event.fortinet, what="N/A", with=null
 replace $event.fortinet, what="none", with=null
 replace $event.fortinet, what="undefined", with=null
 
+// FortiGate reports `date` and `time` in the device's local time zone and `tz`
+// as the matching UTC offset. FortiOS spells the offset either as `+0200` or as
+// `UTC+2:00`, so normalize both to the `±HHMM` form that `%z` understands and
+// leave anything else in `unmapped` rather than guessing.
+$event.tz_offset = null
+if $event.fortinet.tz? != null {
+  $event.tz_offset = $event.fortinet.tz.string().replace_regex("^UTC", "").replace(":", "")
+  // `parse_kv` reads `tz="+0200"` as the number 200, so restore the sign it
+  // dropped before padding the digits back to four.
+  if not $event.tz_offset.starts_with("-") {
+    $event.tz_offset = f"+{$event.tz_offset.trim_start("+")}"
+  }
+  $event.tz_offset = $event.tz_offset.slice(end=1) + $event.tz_offset.slice(begin=1).pad_start(4, "0")
+  if $event.tz_offset.match_regex(r"^[+-]\d{4}$") {
+    drop $event.fortinet.tz
+  } else {
+    $event.tz_offset = null
+  }
+}
+
 $event.ocsf.metadata = {
   log_format: "kv",
   log_level: move $event.fortinet.level,
@@ -33,6 +53,16 @@ $event.ocsf.metadata = {
   version: "1.8.0",
 }
 
+// Keep the offset in `original_time` so the source timestamp stays unambiguous,
+// and report it separately as the minutes ahead of UTC that OCSF expects.
+if $event.tz_offset != null {
+  $event.ocsf.metadata.original_time = f"{$event.ocsf.metadata.original_time} {$event.tz_offset}"
+  $event.ocsf.timezone_offset = $event.tz_offset.slice(begin=1, end=3).int() * 60 + $event.tz_offset.slice(begin=3).int()
+  if $event.tz_offset.starts_with("-") {
+    $event.ocsf.timezone_offset = 0 - $event.ocsf.timezone_offset
+  }
+}
+
 if $event.fortinet.msg? != null {
   $event.ocsf.message = move $event.fortinet.msg
 }
@@ -43,9 +73,14 @@ if $event.fortinet.eventtime? != null {
   // Values below 1e13 are seconds; above are nanoseconds.
   $event.ocsf.time = $event.ocsf.time.seconds() if $event.ocsf.time < 10T else $event.ocsf.time.nanoseconds()
   $event.ocsf.time = $event.ocsf.time.from_epoch()
+} else if $event.tz_offset != null {
+  $event.ocsf.time = $event.ocsf.metadata.original_time.parse_time("%Y-%m-%d %H:%M:%S %z")
 } else {
+  // Without `tz` the local `date`/`time` pair has no offset to apply, so this
+  // falls back to interpreting it as UTC.
   $event.ocsf.time = $event.ocsf.metadata.original_time.parse_time("%Y-%m-%d %H:%M:%S")
 }
+drop $event.tz_offset
 
 if $event.fortinet.logdesc? != null  {
   $event.ocsf.status_detail = move $event.fortinet.logdesc
