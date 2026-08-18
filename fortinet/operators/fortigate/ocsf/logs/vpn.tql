@@ -1,5 +1,7 @@
 ---
-description: "FortiGate VPN event logs → OCSF Tunnel Activity (4014)"
+description: >-
+  FortiGate VPN event logs → OCSF Tunnel Activity (4014) or
+  Authentication (3002)
 args:
   named:
     - name: event
@@ -7,67 +9,174 @@ args:
       type: field
 ---
 
-@name = "ocsf.tunnel_activity"
+// `subtype=vpn` covers two differently shaped log families:
+//
+//   * IKE negotiation and SA lifecycle (message IDs 37120-37144) describe both
+//     ends of the exchange with `locip`/`locport` and `remip`/`remport`.
+//   * Tunnel-level events — IPsec tunnel up/down/statistics (23101-23103) and
+//     the SSL-VPN families (39424-39426, 39936-39953) — name only the remote
+//     peer and carry `tunnelid`, `tunneltype`, and lifetime counters instead.
+//
+// The last five digits of `logid` are the message ID from Fortinet's log ID
+// catalogue, and `metadata.event_code` already holds `logid` as a string.
+$event.vpn_message_id = $event.ocsf.metadata.event_code.slice(begin=-5)
 
-// FortiGate VPN action → OCSF activity_id.
-// `negotiate` starts a tunnel; `delete` tears it down.
-let $actions = {
-  negotiate: 1,
-  "tunnel-up": 1,
-  "tunnel-down": 2,
-  delete: 2,
+// The VPN identity. IKE logs name it through XAuth or EAP instead of `user`
+// when extended authentication is in play; sentinel values are already null.
+$event.vpn_user = $event.fortinet.user? else $event.fortinet.xauthuser? else $event.fortinet.eapuser?
+$event.vpn_group = $event.fortinet.group? else $event.fortinet.xauthgroup? else $event.fortinet.eapauthgroup?
+drop $event.fortinet.user?
+drop $event.fortinet.xauthuser?
+drop $event.fortinet.eapuser?
+drop $event.fortinet.group?
+drop $event.fortinet.xauthgroup?
+drop $event.fortinet.eapauthgroup?
+
+if $event.vpn_message_id == "39426" {
+  // SSL VPN login failure. The catalogue has no matching success message: a
+  // successful SSL-VPN login is reported as a tunnel-up event instead, which
+  // the tunnel branch below handles.
+  @name = "ocsf.authentication"
+  $event.ocsf.category_uid = 3
+  $event.ocsf.class_uid = 3002
+  $event.ocsf.activity_id = 1  // Logon
+  $event.ocsf.status_id = 2    // Failure
+  $event.ocsf.is_remote = true
+  $event.ocsf.src_endpoint = {
+    ip: move $event.fortinet.remip?,
+  }
+} else {
+  @name = "ocsf.tunnel_activity"
+  $event.ocsf.category_uid = 4
+  $event.ocsf.class_uid = 4014
+
+  // `action` names the transition where the log reports one. Where it does not,
+  // the message ID identifies the family: statistics are a periodic report of a
+  // live tunnel rather than a state change, so they stay Unknown.
+  let $actions = {
+    negotiate: 1,
+    install_sa: 1,
+    "tunnel-up": 1,
+    "tunnel-down": 2,
+    delete: 2,
+  }
+  let $tunnel_up_messages = ["23101", "39424", "39943", "39947"]
+  let $tunnel_down_messages = ["23102", "39425", "39948"]
+  $event.ocsf.activity_id = $actions[$event.fortinet.action?]? else 0
+  if $event.ocsf.activity_id == 0 {
+    if $event.vpn_message_id in $tunnel_up_messages {
+      $event.ocsf.activity_id = 1
+    } else if $event.vpn_message_id in $tunnel_down_messages {
+      $event.ocsf.activity_id = 2
+    }
+  }
+  drop $event.fortinet.action?
+
+  if $event.fortinet.locip? != null {
+    // IKE shape. `init`/`role` say which side opened the exchange; put that side
+    // in `src_endpoint` so the session reads the way ASIM expects.
+    $event.ocsf.local_endpoint = {
+      ip: move $event.fortinet.locip,
+      port: move $event.fortinet.locport?,
+      interface_name: move $event.fortinet.outintf?,
+    }
+    $event.ocsf.remote_endpoint = {
+      ip: move $event.fortinet.remip?,
+      port: move $event.fortinet.remport?,
+    }
+    if $event.fortinet.init? == "remote" or $event.fortinet.role? == "responder" {
+      $event.ocsf.src_endpoint = move $event.ocsf.remote_endpoint
+      $event.ocsf.dst_endpoint = move $event.ocsf.local_endpoint
+    } else {
+      $event.ocsf.src_endpoint = move $event.ocsf.local_endpoint
+      $event.ocsf.dst_endpoint = move $event.ocsf.remote_endpoint
+    }
+  } else {
+    // Tunnel-level shape. Only the remote peer is named. On SSL-VPN it is the
+    // client dialling in, so it is the source; on an IPsec tunnel event it is
+    // the far end of a tunnel this device terminates, so it is the destination.
+    if $event.vpn_message_id.starts_with("39") {
+      $event.ocsf.src_endpoint = {
+        ip: move $event.fortinet.remip?,
+      }
+    } else {
+      $event.ocsf.dst_endpoint = {
+        ip: move $event.fortinet.remip?,
+      }
+    }
+  }
+
+  // `vpntunnel` is the configured tunnel name; `tunnelid` identifies this
+  // instance of it; `tunneltype` is the VPN technology (ipsec, ssl-web,
+  // ssl-tunnel), which is the protocol the tunnel speaks.
+  if $event.fortinet.vpntunnel? != null {
+    $event.ocsf.tunnel_interface = {
+      name: move $event.fortinet.vpntunnel,
+    }
+  }
+  if $event.fortinet.tunnelid? != null {
+    $event.ocsf.session = {
+      uid: (move $event.fortinet.tunnelid).string(),
+    }
+  }
+  $event.ocsf.protocol_name = (move $event.fortinet.tunneltype?) else "IPSec"
+
+  // `dir` is the negotiation direction on IKE logs.
+  $event.ocsf.connection_info = {
+    direction_id: 0,
+  }
+  if $event.fortinet.dir? == "outbound" {
+    $event.ocsf.connection_info.direction_id = 2
+  } else if $event.fortinet.dir? == "inbound" {
+    $event.ocsf.connection_info.direction_id = 1
+  }
+  drop $event.fortinet.dir?
+
+  // Tunnel statistics report the lifetime of a tunnel that is still up, so the
+  // counters are cumulative and `ocsf.time` is the end of the window so far.
+  if $event.fortinet.duration? != null {
+    $event.ocsf.duration = (move $event.fortinet.duration).seconds().count_milliseconds().round()
+    $event.ocsf.end_time = $event.ocsf.time
+    $event.ocsf.start_time = $event.ocsf.end_time - $event.ocsf.duration.milliseconds()
+    $event.ocsf.cumulative_traffic = {
+      bytes_in: move $event.fortinet.rcvdbyte?,
+      bytes_out: move $event.fortinet.sentbyte?,
+      end_time: $event.ocsf.end_time,
+      start_time: $event.ocsf.start_time,
+      timespan: {
+        duration: $event.ocsf.duration,
+      },
+    }
+  }
 }
-
-$event.ocsf.category_uid = 4
-$event.ocsf.class_uid = 4014
-$event.ocsf.activity_id = $actions[move $event.fortinet.action]? else 0
 $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+drop $event.vpn_message_id
+drop $event.ocsf.local_endpoint?
+drop $event.ocsf.remote_endpoint?
 
-// `remip`/`remport` is the remote peer; `locip`/`locport` is the local end.
-$event.ocsf.src_endpoint = {
-  ip: move $event.fortinet.locip,
-  port: move $event.fortinet.locport,
-  interface_name: move $event.fortinet.outintf?,
+if $event.vpn_user != null {
+  $event.ocsf.user = { name: move $event.vpn_user }
+  if $event.vpn_group != null {
+    $event.ocsf.user.groups = [{ name: move $event.vpn_group }]
+  }
 }
+drop $event.vpn_user?
+drop $event.vpn_group?
 
-$event.ocsf.dst_endpoint = {
-  ip: move $event.fortinet.remip,
-  port: move $event.fortinet.remport,
-}
-
-// `vpntunnel` is the configured tunnel name.
-if $event.fortinet.vpntunnel? != null {
-  $event.ocsf.tunnel_interface = {
-    name: move $event.fortinet.vpntunnel,
+// `srccountry` is where the remote peer is.
+if $event.fortinet.srccountry? != null {
+  if $event.ocsf.src_endpoint? != null {
+    $event.ocsf.src_endpoint.location = { country: move $event.fortinet.srccountry }
+  } else {
+    $event.ocsf.dst_endpoint.location = { country: move $event.fortinet.srccountry }
   }
 }
 
-// `mode` is the IKE exchange mode (main, aggressive).
-// `dir` is the negotiation direction (inbound, outbound).
-$event.ocsf.connection_info = {
-  direction_id: 0,
-}
-if $event.fortinet.dir? == "outbound" {
-  $event.ocsf.connection_info.direction_id = 2
-} else if $event.fortinet.dir? == "inbound" {
-  $event.ocsf.connection_info.direction_id = 1
-}
-drop $event.fortinet.dir?
-
-// `status`/`result` reflect negotiation outcome.
+// `status`/`result` reflect the negotiation outcome; `reason` explains it.
 if $event.fortinet.status? != null {
   $event.ocsf.status_id = fortinet::$statuses[move $event.fortinet.status]? else 0
 }
-drop $event.fortinet.result?
-
-// IPsec-specific context: protocol is IKE (UDP 500).
-$event.ocsf.protocol_name = "IPSec"
-
-// `user`/`group`/`xauthuser`/`xauthgroup` are already null after cleaning
-// (N/A → null); only populate if actually set.
-if $event.fortinet.user? != null {
-  $event.ocsf.user = { name: move $event.fortinet.user }
+if $event.fortinet.reason? != null {
+  $event.ocsf.status_code = move $event.fortinet.reason
 }
-drop $event.fortinet.group?
-drop $event.fortinet.xauthuser?
-drop $event.fortinet.xauthgroup?
+drop $event.fortinet.result?

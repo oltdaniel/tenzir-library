@@ -1506,6 +1506,159 @@
 {
   activity_id: 0,
   activity_name: "Unknown",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "Tunnel Activity",
+  class_uid: 4014,
+  connection_info: {
+    direction: "Unknown",
+    direction_id: 0,
+  },
+  cumulative_traffic: {
+    bytes_in: 131072,
+    bytes_out: 52428,
+    end_time: 2025-08-07T10:15:02.987654321Z,
+    start_time: 2025-08-07T09:45:02.987654321Z,
+    timespan: {
+      duration: 1800000,
+    },
+  },
+  device: {
+    zone: "root",
+  },
+  duration: 1800000,
+  end_time: 2025-08-07T10:15:02.987654321Z,
+  message: "SSL tunnel statistics",
+  metadata: {
+    event_code: "101039949",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "vpn",
+    original_time: "2025-08-07 10:15:02 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  protocol_name: "ssl-tunnel",
+  raw_data: "date=2025-08-07 time=10:15:02 eventtime=1754561702987654321 tz=\"-0400\" logid=\"0101039949\" type=\"event\" subtype=\"vpn\" level=\"information\" vd=\"root\" logdesc=\"SSL VPN statistics\" action=\"tunnel-stats\" tunneltype=\"ssl-tunnel\" tunnelid=1234567890 remip=203.0.113.55 user=\"jdoe\" group=\"sslvpn-users\" dst_host=\"10.212.134.200\" duration=1800 sentbyte=52428 rcvdbyte=131072 nextstat=600 srccountry=\"United States\" msg=\"SSL tunnel statistics\"",
+  raw_data_size: 432,
+  session: {
+    uid: "1234567890",
+  },
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 203.0.113.55,
+    location: {
+      country: "United States",
+    },
+  },
+  start_time: 2025-08-07T09:45:02.987654321Z,
+  status_detail: "SSL VPN statistics",
+  time: 2025-08-07T10:15:02.987654321Z,
+  timezone_offset: -240,
+  type_name: "Tunnel Activity: Unknown",
+  type_uid: 401400,
+  unmapped: {
+    dst_host: 10.212.134.200,
+    nextstat: 600,
+  },
+  user: {
+    groups: [
+      {
+        name: "sslvpn-users",
+      },
+    ],
+    name: "jdoe",
+  },
+}
+{
+  activity_id: 0,
+  activity_name: "Unknown",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "Tunnel Activity",
+  class_uid: 4014,
+  connection_info: {
+    direction: "Unknown",
+    direction_id: 0,
+  },
+  cumulative_traffic: {
+    bytes_in: 209715,
+    bytes_out: 104857,
+    end_time: 2025-08-07T09:45:30.111222333Z,
+    start_time: 2025-08-07T08:45:30.111222333Z,
+    timespan: {
+      duration: 3600000,
+    },
+  },
+  device: {
+    zone: "root",
+  },
+  dst_endpoint: {
+    ip: 203.0.113.101,
+    port: 500,
+  },
+  duration: 3600000,
+  end_time: 2025-08-07T09:45:30.111222333Z,
+  message: "IPsec tunnel statistics",
+  metadata: {
+    event_code: "101037141",
+    log_format: "kv",
+    log_level: "notice",
+    log_name: "vpn",
+    original_time: "2025-08-07 09:45:30 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  protocol_name: "ipsec",
+  raw_data: "date=2025-08-07 time=09:45:30 eventtime=1754559930111222333 tz=\"-0400\" logid=\"0101037141\" type=\"event\" subtype=\"vpn\" level=\"notice\" vd=\"root\" logdesc=\"IPsec tunnel statistics\" msg=\"IPsec tunnel statistics\" action=\"tunnel-stats\" remip=203.0.113.101 locip=198.51.100.10 remport=500 locport=500 outintf=\"port14\" cookies=\"9091f4d4837ea71c/aabbccddeeff0011\" user=\"N/A\" group=\"N/A\" xauthuser=\"N/A\" xauthgroup=\"N/A\" assignip=N/A vpntunnel=\"branch-office\" tunnelip=10.10.10.1 tunnelid=1 tunneltype=\"ipsec\" duration=3600 sentbyte=104857 rcvdbyte=209715 nextstat=600 srccountry=\"United States\"",
+  raw_data_size: 583,
+  session: {
+    uid: "1",
+  },
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    interface_name: "port14",
+    ip: 198.51.100.10,
+    location: {
+      country: "United States",
+    },
+    port: 500,
+  },
+  start_time: 2025-08-07T08:45:30.111222333Z,
+  status_detail: "IPsec tunnel statistics",
+  time: 2025-08-07T09:45:30.111222333Z,
+  timezone_offset: -240,
+  tunnel_interface: {
+    name: "branch-office",
+  },
+  type_name: "Tunnel Activity: Unknown",
+  type_uid: 401400,
+  unmapped: {
+    cookies: "9091f4d4837ea71c/aabbccddeeff0011",
+    assignip: null,
+    tunnelip: 10.10.10.1,
+    nextstat: 600,
+  },
+}
+{
+  activity_id: 0,
+  activity_name: "Unknown",
   category_name: "Uncategorized",
   category_uid: 0,
   class_name: "Base Event",
@@ -2837,6 +2990,62 @@
 }
 {
   activity_id: 1,
+  activity_name: "Logon",
+  category_name: "Identity & Access Management",
+  category_uid: 3,
+  class_name: "Authentication",
+  class_uid: 3002,
+  device: {
+    zone: "root",
+  },
+  is_remote: true,
+  message: "SSL user failed to logged in",
+  metadata: {
+    event_code: "101039426",
+    log_format: "kv",
+    log_level: "alert",
+    log_name: "vpn",
+    original_time: "2025-08-07 09:12:44 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2025-08-07 time=09:12:44 eventtime=1754557964123456789 tz=\"-0400\" logid=\"0101039426\" type=\"event\" subtype=\"vpn\" level=\"alert\" vd=\"root\" logdesc=\"SSL VPN login fail\" action=\"ssl-login-fail\" tunneltype=\"ssl-web\" tunnelid=0 remip=203.0.113.55 user=\"jdoe\" group=\"N/A\" dst_host=\"N/A\" reason=\"sslvpn_login_permission_denied\" srccountry=\"United States\" msg=\"SSL user failed to logged in\"",
+  raw_data_size: 385,
+  severity: "Critical",
+  severity_id: 5,
+  src_endpoint: {
+    ip: 203.0.113.55,
+    location: {
+      country: "United States",
+    },
+  },
+  status: "Failure",
+  status_code: "sslvpn_login_permission_denied",
+  status_detail: "SSL VPN login fail",
+  status_id: 2,
+  time: 2025-08-07T09:12:44.123456789Z,
+  timezone_offset: -240,
+  type_name: "Authentication: Logon",
+  type_uid: 300201,
+  unmapped: {
+    action: "ssl-login-fail",
+    tunneltype: "ssl-web",
+    tunnelid: 0,
+    dst_host: null,
+  },
+  user: {
+    name: "jdoe",
+  },
+}
+{
+  activity_id: 1,
   activity_name: "Open",
   category_name: "Network Activity",
   category_uid: 4,
@@ -2891,12 +3100,146 @@
   type_uid: 401401,
   unmapped: {
     cookies: "9091f4d4837ea71c/0000000000000000",
-    user: null,
     assignip: null,
     init: "local",
     mode: "main",
     stage: 1,
     role: "initiator",
+  },
+}
+{
+  activity_id: 1,
+  activity_name: "Open",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "Tunnel Activity",
+  class_uid: 4014,
+  connection_info: {
+    direction: "Unknown",
+    direction_id: 0,
+  },
+  device: {
+    zone: "root",
+  },
+  dst_endpoint: {
+    interface_name: "port14",
+    ip: 198.51.100.10,
+    port: 500,
+  },
+  message: "IPsec phase 2 status changed",
+  metadata: {
+    event_code: "101037139",
+    log_format: "kv",
+    log_level: "notice",
+    log_name: "vpn",
+    original_time: "2025-08-07 09:20:11 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  protocol_name: "IPSec",
+  raw_data: "date=2025-08-07 time=09:20:11 eventtime=1754558411222333444 tz=\"-0400\" logid=\"0101037139\" type=\"event\" subtype=\"vpn\" level=\"notice\" vd=\"root\" logdesc=\"IPsec phase 2 status changed\" msg=\"IPsec phase 2 status changed\" action=\"tunnel-up\" remip=203.0.113.101 locip=198.51.100.10 remport=500 locport=500 outintf=\"port14\" cookies=\"9091f4d4837ea71c/aabbccddeeff0011\" user=\"N/A\" group=\"N/A\" xauthuser=\"vpnadmin\" xauthgroup=\"ipsec-users\" assignip=N/A vpntunnel=\"branch-office\" phase2_name=\"branch-office-p2\" srccountry=\"United States\" init=\"remote\" role=\"responder\"",
+  raw_data_size: 556,
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 203.0.113.101,
+    location: {
+      country: "United States",
+    },
+    port: 500,
+  },
+  status_detail: "IPsec phase 2 status changed",
+  time: 2025-08-07T09:20:11.222333444Z,
+  timezone_offset: -240,
+  tunnel_interface: {
+    name: "branch-office",
+  },
+  type_name: "Tunnel Activity: Open",
+  type_uid: 401401,
+  unmapped: {
+    cookies: "9091f4d4837ea71c/aabbccddeeff0011",
+    assignip: null,
+    phase2_name: "branch-office-p2",
+    init: "remote",
+    role: "responder",
+  },
+  user: {
+    groups: [
+      {
+        name: "ipsec-users",
+      },
+    ],
+    name: "vpnadmin",
+  },
+}
+{
+  activity_id: 1,
+  activity_name: "Open",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "Tunnel Activity",
+  class_uid: 4014,
+  connection_info: {
+    direction: "Unknown",
+    direction_id: 0,
+  },
+  device: {
+    zone: "root",
+  },
+  message: "SSL tunnel established",
+  metadata: {
+    event_code: "101039947",
+    log_format: "kv",
+    log_level: "information",
+    log_name: "vpn",
+    original_time: "2025-08-07 09:15:02 -0400",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  protocol_name: "ssl-tunnel",
+  raw_data: "date=2025-08-07 time=09:15:02 eventtime=1754558102987654321 tz=\"-0400\" logid=\"0101039947\" type=\"event\" subtype=\"vpn\" level=\"information\" vd=\"root\" logdesc=\"SSL VPN tunnel up\" action=\"tunnel-up\" tunneltype=\"ssl-tunnel\" tunnelid=1234567890 remip=203.0.113.55 user=\"jdoe\" group=\"sslvpn-users\" dst_host=\"10.212.134.200\" reason=\"N/A\" srccountry=\"United States\" msg=\"SSL tunnel established\"",
+  raw_data_size: 384,
+  session: {
+    uid: "1234567890",
+  },
+  severity: "Informational",
+  severity_id: 1,
+  src_endpoint: {
+    ip: 203.0.113.55,
+    location: {
+      country: "United States",
+    },
+  },
+  status_detail: "SSL VPN tunnel up",
+  time: 2025-08-07T09:15:02.987654321Z,
+  timezone_offset: -240,
+  type_name: "Tunnel Activity: Open",
+  type_uid: 401401,
+  unmapped: {
+    dst_host: 10.212.134.200,
+    reason: null,
+  },
+  user: {
+    groups: [
+      {
+        name: "sslvpn-users",
+      },
+    ],
+    name: "jdoe",
   },
 }
 {
