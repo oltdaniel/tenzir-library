@@ -1,0 +1,54 @@
+from {
+  activity_id: 1,
+  activity_name: "Open",
+  category_uid: 4,
+  class_uid: 4007,
+  class_name: "SSH Activity",
+  type_uid: 400701,
+  time: 2026-01-01T00:00:00Z,
+  severity_id: 3,
+  metadata: {
+    event_code: "1601061010",
+    log_name: "ssh",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: ["host", "security_control"],
+    version: "1.8.0",
+  },
+  device: {
+    hostname: "fw1.example.org",
+    zone: "vdom1",
+  },
+  observation_point_id: 3,
+  disposition_id: 2,
+  disposition: "Blocked",
+  src_endpoint: {
+    ip: 10.1.100.11,
+    port: 43580,
+    interface_name: "port21",
+    zone: "lan",
+  },
+  dst_endpoint: {
+    ip: 172.16.200.44,
+    port: 22,
+    interface_name: "port23",
+    zone: "wan",
+    owner: {
+      name: "root",
+    },
+  },
+  connection_info: {
+    direction_id: 2,
+    protocol_num: 6,
+    uid: "344",
+  },
+  client_hassh: "ec7378c1a92f5a8dde7e8b7a1ddf33d1",
+  server_hassh: "b12d2871a1189eff20364cf5333619ee",
+  firewall_rule: {
+    uid: "1",
+  },
+}
+microsoft::asim::ocsf::map
+name = @name

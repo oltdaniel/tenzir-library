@@ -51,6 +51,15 @@ match $event.class_uid {
   4002 => {
     microsoft::asim::ocsf::http_activity event=$event
   }
+  4006 => {
+    microsoft::asim::ocsf::smb_activity event=$event
+  }
+  4007 => {
+    microsoft::asim::ocsf::ssh_activity event=$event
+  }
+  4014 => {
+    microsoft::asim::ocsf::tunnel_activity event=$event
+  }
   4003 => {
     microsoft::asim::ocsf::dns_activity event=$event
   }

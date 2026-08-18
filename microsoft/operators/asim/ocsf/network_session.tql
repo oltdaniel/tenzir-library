@@ -1,0 +1,515 @@
+---
+description: >-
+  Maps the OCSF network-session family to Microsoft Sentinel ASIM
+  NetworkSession records. Shared by the Network Activity, SMB Activity, SSH
+  Activity, and Tunnel Activity mappers: all four describe a connection between
+  two endpoints, and ASIM has one schema for that.
+args:
+  named:
+    - name: event
+      description: The field that holds the OCSF event to map.
+      type: field
+---
+
+$event = {...$event, ocsf: $event, asim: {}}
+
+assert $event.ocsf.class_uid in [4001, 4006, 4007, 4014]
+
+microsoft::asim::ocsf::common event=$event
+
+@name = "asim.network_session"
+$event.asim.EventSchema = "NetworkSession"
+$event.asim.EventSchemaVersion = "0.2.7"
+
+// OCSF's Traffic activity describes an observation interval, not necessarily
+// an aggregated flow. Only emit ASIM Flow when the OCSF event itself or its
+// producer identifies an aggregation/flow source.
+$event.asim.EventType = "NetworkSession"
+if ($event.ocsf.count? > 1 or $event.ocsf.metadata?.log_name? == "netflow" or $event.ocsf.metadata?.product?.feature?.name? == "Flow Logs") {
+  $event.asim.EventType = "Flow"
+} else if ($event.ocsf.observation_point_id? in [1, 2, 4] or $event.ocsf.activity_name? == "Listen") {
+  $event.asim.EventType = "EndpointNetworkSession"
+} else if ($event.ocsf.src_endpoint?.ip? == null and $event.ocsf.dst_endpoint?.ip? == null and ($event.ocsf.src_endpoint?.mac? != null or $event.ocsf.dst_endpoint?.mac? != null)) {
+  $event.asim.EventType = "L2NetworkSession"
+}
+
+if $event.asim.EventType != "Flow" {
+  if $event.ocsf.activity_name? == "Open" {
+    $event.asim.EventSubType = "Start"
+  } else if $event.ocsf.activity_name? in ["Close", "Reset"] {
+    $event.asim.EventSubType = "End"
+  }
+}
+
+if $event.ocsf.count? != null {
+  $event.asim.EventCount = $event.ocsf.count
+}
+if $event.ocsf.metadata?.product?.version? != null {
+  $event.asim.EventProductVersion = $event.ocsf.metadata.product.version
+}
+if $event.ocsf.metadata?.log_name? != null {
+  $event.asim.EventOriginalSubType = $event.ocsf.metadata.log_name
+}
+
+// Cumulative traffic contains the complete lifetime totals for a session-end
+// event. Prefer it over the current observation window when both are present.
+$event.network_traffic = $event.ocsf.cumulative_traffic? else $event.ocsf.traffic?
+$event.asim.EventStartTime = $event.ocsf.start_time? else $event.network_traffic?.start_time? else $event.network_traffic?.timespan?.start_time? else $event.ocsf.time
+$event.asim.EventEndTime = $event.ocsf.end_time? else $event.network_traffic?.end_time? else $event.network_traffic?.timespan?.end_time? else $event.ocsf.time
+$event.network_duration = $event.ocsf.duration? else $event.network_traffic?.timespan?.duration?
+if $event.network_duration != null {
+  $event.asim.NetworkDuration = $event.network_duration
+}
+if ($event.asim.NetworkDuration? == null
+  and ($event.ocsf.start_time? != null or $event.network_traffic?.start_time? != null or $event.network_traffic?.timespan?.start_time? != null)
+  and ($event.ocsf.end_time? != null or $event.network_traffic?.end_time? != null or $event.network_traffic?.timespan?.end_time? != null)) {
+  $event.asim.NetworkDuration = ($event.asim.EventEndTime - $event.asim.EventStartTime).count_milliseconds().round()
+}
+
+// Reporting device.
+if $event.ocsf.device?.uid? != null {
+  $event.asim.DvcIdType = "Other"
+}
+if $event.ocsf.device?.zone? != null {
+  $event.asim.DvcZone = $event.ocsf.device.zone
+}
+if $event.ocsf.device?.mac? != null {
+  $event.asim.DvcMacAddr = $event.ocsf.device.mac
+}
+if $event.ocsf.device?.desc? != null {
+  $event.asim.DvcDescription = $event.ocsf.device.desc
+}
+if $event.ocsf.device?.os?.name? != null {
+  $event.asim.DvcOs = $event.ocsf.device.os.name
+}
+if $event.ocsf.device?.os?.version? != null {
+  $event.asim.DvcOsVersion = $event.ocsf.device.os.version
+}
+if $event.ocsf.device?.interface_name? != null {
+  $event.asim.DvcInterface = $event.ocsf.device.interface_name
+}
+
+// A dedicated network observation point is a more precise reporting-device
+// identity for taps, sensors, and inline controls than the generic product.
+if $event.ocsf.observation_point_id? == 3 and $event.ocsf.network_observation_point? != null {
+  $event.asim.Dvc = $event.ocsf.network_observation_point.name? else $event.ocsf.network_observation_point.hostname? else $event.ocsf.network_observation_point.ip?.string() else $event.ocsf.network_observation_point.uid? else $event.asim.Dvc
+  if $event.ocsf.network_observation_point?.hostname? != null {
+    $event.asim.DvcHostname = $event.ocsf.network_observation_point.hostname
+    $event.asim.DvcFQDN = $event.ocsf.network_observation_point.hostname
+  }
+  if $event.ocsf.network_observation_point?.ip? != null {
+    $event.asim.DvcIpAddr = $event.ocsf.network_observation_point.ip
+  }
+  if $event.ocsf.network_observation_point?.uid? != null {
+    $event.asim.DvcId = $event.ocsf.network_observation_point.uid
+    $event.asim.DvcIdType = "Other"
+  }
+  if $event.ocsf.network_observation_point?.interface_name? != null {
+    $event.asim.DvcInterface = $event.ocsf.network_observation_point.interface_name
+  }
+  if $event.ocsf.network_observation_point?.mac? != null {
+    $event.asim.DvcMacAddr = $event.ocsf.network_observation_point.mac
+  }
+  if $event.ocsf.network_observation_point?.zone? != null {
+    $event.asim.DvcZone = $event.ocsf.network_observation_point.zone
+  }
+}
+
+// Source and destination endpoints.
+$event.asim.SrcIpAddr = $event.ocsf.src_endpoint?.ip?
+$event.asim.SrcHostname = $event.ocsf.src_endpoint?.name? else $event.ocsf.src_endpoint?.hostname?
+if $event.ocsf.src_endpoint?.hostname? != null {
+  $event.asim.SrcFQDN = $event.ocsf.src_endpoint.hostname
+}
+$event.asim.SrcPortNumber = $event.ocsf.src_endpoint?.port?
+if $event.ocsf.src_endpoint?.mac? != null {
+  $event.asim.SrcMacAddr = $event.ocsf.src_endpoint.mac
+}
+if $event.ocsf.src_endpoint?.interface_name? != null {
+  $event.asim.SrcInterfaceName = $event.ocsf.src_endpoint.interface_name
+}
+if $event.ocsf.src_endpoint?.vlan_uid? != null {
+  $event.asim.SrcVlanId = $event.ocsf.src_endpoint.vlan_uid
+}
+if $event.ocsf.src_endpoint?.zone? != null {
+  $event.asim.SrcZone = $event.ocsf.src_endpoint.zone
+}
+if $event.ocsf.src_endpoint?.desc? != null {
+  $event.asim.SrcDescription = $event.ocsf.src_endpoint.desc
+}
+if $event.ocsf.src_endpoint?.uid? != null {
+  $event.asim.SrcDvcId = $event.ocsf.src_endpoint.uid
+  $event.asim.SrcDvcIdType = "Other"
+}
+if $event.ocsf.src_endpoint?.owner?.email_addr? != null {
+  $event.asim.SrcUsername = $event.ocsf.src_endpoint.owner.email_addr
+  $event.asim.SrcUsernameType = "UPN"
+} else if $event.ocsf.src_endpoint?.owner?.name? != null {
+  $event.asim.SrcUsername = $event.ocsf.src_endpoint.owner.name
+  $event.asim.SrcUsernameType = "Simple"
+}
+if $event.ocsf.src_endpoint?.owner?.uid? != null {
+  $event.asim.SrcUserId = $event.ocsf.src_endpoint.owner.uid
+  $event.asim.SrcUserIdType = "Other"
+}
+if $event.ocsf.src_endpoint?.location?.city? != null {
+  $event.asim.SrcGeoCity = $event.ocsf.src_endpoint.location.city
+}
+if $event.ocsf.src_endpoint?.location?.country? != null {
+  $event.asim.SrcGeoCountry = $event.ocsf.src_endpoint.location.country
+}
+if $event.ocsf.src_endpoint?.location?.region? != null {
+  $event.asim.SrcGeoRegion = $event.ocsf.src_endpoint.location.region
+}
+if $event.ocsf.src_endpoint?.location?.lat? != null {
+  $event.asim.SrcGeoLatitude = $event.ocsf.src_endpoint.location.lat
+}
+if $event.ocsf.src_endpoint?.location?.long? != null {
+  $event.asim.SrcGeoLongitude = $event.ocsf.src_endpoint.location.long
+}
+
+$event.asim.DstIpAddr = $event.ocsf.dst_endpoint?.ip?
+$event.asim.DstHostname = $event.ocsf.dst_endpoint?.name? else $event.ocsf.dst_endpoint?.hostname?
+if $event.ocsf.dst_endpoint?.hostname? != null {
+  $event.asim.DstFQDN = $event.ocsf.dst_endpoint.hostname
+}
+$event.asim.DstPortNumber = $event.ocsf.dst_endpoint?.port?
+if $event.ocsf.dst_endpoint?.mac? != null {
+  $event.asim.DstMacAddr = $event.ocsf.dst_endpoint.mac
+}
+if $event.ocsf.dst_endpoint?.interface_name? != null {
+  $event.asim.DstInterfaceName = $event.ocsf.dst_endpoint.interface_name
+}
+if $event.ocsf.dst_endpoint?.vlan_uid? != null {
+  $event.asim.DstVlanId = $event.ocsf.dst_endpoint.vlan_uid
+}
+if $event.ocsf.dst_endpoint?.zone? != null {
+  $event.asim.DstZone = $event.ocsf.dst_endpoint.zone
+}
+if $event.ocsf.dst_endpoint?.desc? != null {
+  $event.asim.DstDescription = $event.ocsf.dst_endpoint.desc
+}
+if $event.ocsf.dst_endpoint?.uid? != null {
+  $event.asim.DstDvcId = $event.ocsf.dst_endpoint.uid
+  $event.asim.DstDvcIdType = "Other"
+}
+if $event.ocsf.dst_endpoint?.owner?.email_addr? != null {
+  $event.asim.DstUsername = $event.ocsf.dst_endpoint.owner.email_addr
+  $event.asim.DstUsernameType = "UPN"
+} else if $event.ocsf.dst_endpoint?.owner?.name? != null {
+  $event.asim.DstUsername = $event.ocsf.dst_endpoint.owner.name
+  $event.asim.DstUsernameType = "Simple"
+}
+if $event.ocsf.dst_endpoint?.owner?.uid? != null {
+  $event.asim.DstUserId = $event.ocsf.dst_endpoint.owner.uid
+  $event.asim.DstUserIdType = "Other"
+}
+if $event.ocsf.dst_endpoint?.location?.city? != null {
+  $event.asim.DstGeoCity = $event.ocsf.dst_endpoint.location.city
+}
+if $event.ocsf.dst_endpoint?.location?.country? != null {
+  $event.asim.DstGeoCountry = $event.ocsf.dst_endpoint.location.country
+}
+if $event.ocsf.dst_endpoint?.location?.region? != null {
+  $event.asim.DstGeoRegion = $event.ocsf.dst_endpoint.location.region
+}
+if $event.ocsf.dst_endpoint?.location?.lat? != null {
+  $event.asim.DstGeoLatitude = $event.ocsf.dst_endpoint.location.lat
+}
+if $event.ocsf.dst_endpoint?.location?.long? != null {
+  $event.asim.DstGeoLongitude = $event.ocsf.dst_endpoint.location.long
+}
+
+// On an intermediary observer (for example a firewall), endpoint interfaces
+// are the device's ingress and egress interfaces.
+if $event.ocsf.observation_point_id? == 3 {
+  $event.asim.DvcInboundInterface = $event.ocsf.src_endpoint?.interface_name?
+  $event.asim.DvcOutboundInterface = $event.ocsf.dst_endpoint?.interface_name?
+  drop $event.asim.SrcInterfaceName?
+  drop $event.asim.DstInterfaceName?
+}
+
+// OCSF proxy_endpoint also models NAT. Restrict this interpretation to
+// security controls so proxy telemetry is not accidentally reported as NAT.
+if "security_control" in ($event.ocsf.metadata?.profiles? else []) {
+  if $event.ocsf.src_endpoint?.proxy_endpoint?.ip? != null {
+    $event.asim.SrcNatIpAddr = $event.ocsf.src_endpoint.ip
+    $event.asim.SrcNatPortNumber = $event.ocsf.src_endpoint.port?
+    $event.asim.SrcIpAddr = $event.ocsf.src_endpoint.proxy_endpoint.ip
+    $event.asim.SrcPortNumber = $event.ocsf.src_endpoint.proxy_endpoint.port? else $event.asim.SrcPortNumber?
+  }
+  if $event.ocsf.dst_endpoint?.proxy_endpoint?.ip? != null {
+    $event.asim.DstNatIpAddr = $event.ocsf.dst_endpoint.proxy_endpoint.ip
+    $event.asim.DstNatPortNumber = $event.ocsf.dst_endpoint.proxy_endpoint.port?
+  }
+}
+
+// Network session metadata and counters.
+if $event.ocsf.connection_info?.uid? != null {
+  $event.asim.NetworkSessionId = $event.ocsf.connection_info.uid
+} else if $event.ocsf.session?.uid? != null {
+  $event.asim.NetworkSessionId = $event.ocsf.session.uid
+}
+if $event.ocsf.connection_info?.protocol_name? != null {
+  $event.asim.NetworkProtocol = $event.ocsf.connection_info.protocol_name.to_upper()
+} else {
+  let $protocols = {
+    "1": "ICMP",
+    "6": "TCP",
+    "17": "UDP",
+    "41": "IPV6",
+    "50": "ESP",
+    "51": "AH",
+    "58": "IPV6-ICMP",
+    "132": "SCTP",
+  }
+  if $protocols[$event.ocsf.connection_info?.protocol_num?.string()]? != null {
+    $event.asim.NetworkProtocol = $protocols[$event.ocsf.connection_info.protocol_num.string()]
+  }
+}
+match $event.ocsf.connection_info?.protocol_ver_id? {
+  4 => {
+    $event.asim.NetworkProtocolVersion = "IPv4"
+  }
+  6 => {
+    $event.asim.NetworkProtocolVersion = "IPv6"
+  }
+  _ if $event.ocsf.connection_info?.protocol_ver? in ["IPv4", "Internet Protocol version 4 (IPv4)"] => {
+    $event.asim.NetworkProtocolVersion = "IPv4"
+  }
+  _ if $event.ocsf.connection_info?.protocol_ver? in ["IPv6", "Internet Protocol version 6 (IPv6)"] => {
+    $event.asim.NetworkProtocolVersion = "IPv6"
+  }
+  _ => {}
+}
+match $event.ocsf.connection_info?.direction_id? {
+  1 => {
+    $event.asim.NetworkDirection = "Inbound"
+  }
+  2 => {
+    $event.asim.NetworkDirection = "Outbound"
+  }
+  3 => {
+    $event.asim.NetworkDirection = "Local"
+  }
+  4 => {
+    $event.asim.NetworkDirection = "Local"
+  }
+  _ if $event.ocsf.activity_name? == "Listen" => {
+    $event.asim.NetworkDirection = "Listen"
+  }
+  _ => {
+    $event.asim.NetworkDirection = "NA"
+  }
+}
+if $event.asim.NetworkDirection == "NA" {
+  if $event.asim.EventType == "EndpointNetworkSession" {
+    match $event.ocsf.observation_point_id? {
+      1 => {
+        $event.asim.NetworkDirection = "Outbound"
+      }
+      2 => {
+        $event.asim.NetworkDirection = "Inbound"
+      }
+      4 => {
+        $event.asim.NetworkDirection = "Local"
+      }
+      _ => {}
+    }
+  } else if $event.ocsf.src_endpoint?.network_scope_id? == 1 and $event.ocsf.dst_endpoint?.network_scope_id? == 2 {
+    $event.asim.NetworkDirection = "Outbound"
+  } else if $event.ocsf.src_endpoint?.network_scope_id? == 2 and $event.ocsf.dst_endpoint?.network_scope_id? == 1 {
+    $event.asim.NetworkDirection = "Inbound"
+  } else if $event.ocsf.src_endpoint?.network_scope_id? == 1 and $event.ocsf.dst_endpoint?.network_scope_id? == 1 {
+    $event.asim.NetworkDirection = "Local"
+  } else if $event.ocsf.src_endpoint?.network_scope_id? == 2 and $event.ocsf.dst_endpoint?.network_scope_id? == 2 {
+    $event.asim.NetworkDirection = "External"
+  }
+}
+// Tunnel Activity carries the tunnel kind (for example "IPSec" or "sslvpn") in
+// the class-level `protocol_name`. It is a VPN type rather than an IANA IP
+// protocol, so it belongs in NetworkApplicationProtocol, not NetworkProtocol.
+// The remaining classes name their own protocol by definition.
+$event.app_protocol = $event.ocsf.app_protocol_name? else $event.ocsf.dst_endpoint?.svc_name?
+if $event.app_protocol == null {
+  match $event.ocsf.class_uid {
+    4006 => {
+      $event.app_protocol = "SMB"
+    }
+    4007 => {
+      $event.app_protocol = "SSH"
+    }
+    4014 => {
+      $event.app_protocol = $event.ocsf.protocol_name?
+    }
+    _ => {}
+  }
+}
+if $event.app_protocol != null {
+  $event.asim.NetworkApplicationProtocol = $event.app_protocol.to_upper()
+}
+if $event.ocsf.connection_info?.flag_history? != null {
+  $event.asim.NetworkConnectionHistory = $event.ocsf.connection_info.flag_history
+}
+
+$event.asim.SrcBytes = $event.network_traffic?.bytes_out?
+$event.asim.DstBytes = $event.network_traffic?.bytes_in?
+if $event.network_traffic?.packets_out? != null {
+  $event.asim.SrcPackets = $event.network_traffic.packets_out
+}
+if $event.network_traffic?.packets_in? != null {
+  $event.asim.DstPackets = $event.network_traffic.packets_in
+}
+if $event.network_traffic?.bytes? != null {
+  $event.asim.NetworkBytes = $event.network_traffic.bytes
+}
+if $event.network_traffic?.packets? != null {
+  $event.asim.NetworkPackets = $event.network_traffic.packets
+}
+if $event.asim.NetworkBytes? == null and $event.asim.SrcBytes? != null and $event.asim.DstBytes? != null {
+  $event.asim.NetworkBytes = $event.asim.SrcBytes + $event.asim.DstBytes
+}
+if $event.asim.NetworkPackets? == null and $event.asim.SrcPackets? != null and $event.asim.DstPackets? != null {
+  $event.asim.NetworkPackets = $event.asim.SrcPackets + $event.asim.DstPackets
+}
+
+if $event.ocsf.firewall_rule?.name? != null or $event.ocsf.firewall_rule?.uid? != null {
+  $event.asim.NetworkRuleName = $event.ocsf.firewall_rule?.name? else $event.ocsf.firewall_rule.uid
+}
+if $event.ocsf.risk_score? != null {
+  $event.asim.ThreatRiskLevel = $event.ocsf.risk_score
+}
+if $event.ocsf.risk_level? != null {
+  $event.asim.ThreatOriginalRiskLevel = $event.ocsf.risk_level
+}
+
+// Normalize security-control outcomes to ASIM's smaller action vocabulary.
+if $event.ocsf.disposition_id? == 99 or $event.ocsf.action_id? == 99 {
+  $event.asim.DvcOriginalAction = $event.ocsf.disposition? else $event.ocsf.action
+}
+drop $event.asim.DvcAction?
+match $event.ocsf.disposition? {
+  "Allowed" | "Approved" => {
+    $event.asim.DvcAction = "Allow"
+    $event.asim.EventResult = "Success"
+  }
+  "Blocked" | "Rejected" | "Unauthorized" => {
+    $event.asim.DvcAction = "Deny"
+    $event.asim.EventResult = "Failure"
+  }
+  "Dropped" => {
+    $event.asim.DvcAction = "Drop"
+    $event.asim.EventResult = "Failure"
+  }
+  "Reset" => {
+    $event.asim.DvcAction = "Reset"
+    $event.asim.EventResult = "Failure"
+  }
+  _ => {
+    match $event.ocsf.action? {
+      "Allowed" => {
+        $event.asim.DvcAction = "Allow"
+        $event.asim.EventResult = "Success"
+      }
+      "Denied" => {
+        $event.asim.DvcAction = "Deny"
+        $event.asim.EventResult = "Failure"
+      }
+      _ => {}
+    }
+  }
+}
+if $event.asim.EventResult == "NA" {
+  $event.asim.EventResult = "Failure" if $event.ocsf.activity_name? in ["Fail", "Refuse", "Reset"] else "Success"
+}
+if $event.asim.EventSeverity? == null {
+  $event.asim.EventSeverity = "Low" if $event.asim.EventResult == "Failure" else "Informational"
+}
+
+// Details specific to one class of the family. These stay behind a class guard
+// so that callers borrowing this mapper for a neighbouring class — HTTP
+// Activity does — keep control of the attributes their own class defines.
+match $event.ocsf.class_uid {
+  4006 => {
+    // SMB Activity describes a file access riding on the session. ASIM
+    // NetworkSession has no file fields, so the details go to AdditionalFields;
+    // consumers needing file semantics should use the FileEvent schema.
+    if $event.ocsf.file? != null {
+      $event.asim.AdditionalFields.ocsf_file = $event.ocsf.file
+    }
+    if $event.ocsf.share? != null {
+      $event.asim.AdditionalFields.ocsf_share = $event.ocsf.share
+    }
+  }
+  4007 => {
+    // SSH fingerprints identify the client and server implementations.
+    if $event.ocsf.client_hassh? != null {
+      $event.asim.AdditionalFields.ocsf_client_hassh = $event.ocsf.client_hassh
+    }
+    if $event.ocsf.server_hassh? != null {
+      $event.asim.AdditionalFields.ocsf_server_hassh = $event.ocsf.server_hassh
+    }
+  }
+  4014 => {
+    // A tunnel names the interface it terminates on and the identity that
+    // brought it up. Both belong to the reporting device's view of the session.
+    if $event.ocsf.tunnel_interface?.name? != null {
+      $event.asim.DvcInterface = $event.ocsf.tunnel_interface.name
+      $event.asim.AdditionalFields.ocsf_tunnel_interface_name = $event.ocsf.tunnel_interface.name
+    }
+    if $event.ocsf.tunnel_type? != null {
+      $event.asim.AdditionalFields.ocsf_tunnel_type = $event.ocsf.tunnel_type
+    }
+    if $event.ocsf.user?.name? != null {
+      $event.asim.SrcUsername = $event.ocsf.user.name
+      $event.asim.SrcUsernameType = "Simple"
+    }
+    if $event.ocsf.user?.uid? != null {
+      $event.asim.SrcUserId = $event.ocsf.user.uid
+      $event.asim.SrcUserIdType = "Other"
+    }
+  }
+  _ => {}
+}
+
+// Preserve OCSF details that have no dedicated ASIM NetworkSession field.
+if $event.ocsf.app_name? != null {
+  $event.asim.AdditionalFields.ocsf_app_name = $event.ocsf.app_name
+}
+if $event.ocsf.connection_info?.community_uid? != null {
+  $event.asim.AdditionalFields.ocsf_community_uid = $event.ocsf.connection_info.community_uid
+}
+if $event.ocsf.connection_info?.tcp_flags? != null {
+  $event.asim.AdditionalFields.ocsf_tcp_flags = $event.ocsf.connection_info.tcp_flags
+}
+if $event.ocsf.connection_info?.boundary? != null {
+  $event.asim.AdditionalFields.ocsf_connection_boundary = $event.ocsf.connection_info.boundary
+}
+if $event.network_traffic?.bytes_missed? != null {
+  $event.asim.AdditionalFields.ocsf_bytes_missed = $event.network_traffic.bytes_missed
+}
+if $event.ocsf.firewall_rule?.uid? != null {
+  $event.asim.AdditionalFields.ocsf_firewall_rule_uid = $event.ocsf.firewall_rule.uid
+}
+if $event.ocsf.firewall_rule?.type? != null {
+  $event.asim.AdditionalFields.ocsf_firewall_rule_type = $event.ocsf.firewall_rule.type
+}
+if $event.ocsf.src_endpoint?.os? != null {
+  $event.asim.AdditionalFields.ocsf_src_endpoint_os = $event.ocsf.src_endpoint.os
+}
+if $event.ocsf.dst_endpoint?.os? != null {
+  $event.asim.AdditionalFields.ocsf_dst_endpoint_os = $event.ocsf.dst_endpoint.os
+}
+if $event.ocsf.tls? != null {
+  $event.asim.AdditionalFields.ocsf_tls = $event.ocsf.tls
+}
+if $event.ocsf.proxy? != null {
+  $event.asim.AdditionalFields.ocsf_proxy = $event.ocsf.proxy
+}
+if $event.ocsf.ja4_fingerprint_list? != null {
+  $event.asim.AdditionalFields.ocsf_ja4_fingerprint_list = $event.ocsf.ja4_fingerprint_list
+}
+if $event.ocsf.unmapped? != null {
+  $event.asim.AdditionalFields.ocsf_unmapped = $event.ocsf.unmapped
+}
+$event = move $event.asim

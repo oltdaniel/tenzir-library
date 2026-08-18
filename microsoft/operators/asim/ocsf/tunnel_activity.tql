@@ -1,5 +1,5 @@
 ---
-description: Maps OCSF Network Activity events to Microsoft Sentinel ASIM NetworkSession records.
+description: Maps OCSF Tunnel Activity events to Microsoft Sentinel ASIM NetworkSession records.
 args:
   named:
     - name: event
@@ -7,5 +7,5 @@ args:
       type: field
 ---
 
-assert $event.class_uid == 4001
+assert $event.class_uid == 4014
 microsoft::asim::ocsf::network_session event=$event

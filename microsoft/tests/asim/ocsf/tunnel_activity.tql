@@ -1,0 +1,51 @@
+from {
+  activity_id: 1,
+  activity_name: "Open",
+  category_uid: 4,
+  class_uid: 4014,
+  class_name: "Tunnel Activity",
+  type_uid: 401401,
+  time: 2026-01-01T00:00:00Z,
+  severity_id: 1,
+  status_id: 1,
+  status: "Success",
+  metadata: {
+    event_code: "101037127",
+    log_name: "vpn",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: ["host"],
+    version: "1.8.0",
+  },
+  device: {
+    hostname: "fw1.example.org",
+    zone: "root",
+  },
+  protocol_name: "IPSec",
+  src_endpoint: {
+    ip: 50.1.1.100,
+    port: 500,
+    interface_name: "port14",
+  },
+  dst_endpoint: {
+    ip: 50.1.1.101,
+    port: 500,
+  },
+  connection_info: {
+    direction_id: 2,
+  },
+  tunnel_interface: {
+    name: "branch-office",
+  },
+  session: {
+    uid: "52C66FE08F724FE0B116DAD5062C96CD",
+  },
+  user: {
+    name: "vpnuser",
+    uid: "u-42",
+  },
+}
+microsoft::asim::ocsf::map
+name = @name
