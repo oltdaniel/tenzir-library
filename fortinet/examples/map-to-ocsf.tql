@@ -3,7 +3,17 @@ name: FortiGate → OCSF
 ---
 
 subscribe "fortinet"
-fortinet = content.parse_kv()
+// FortiGate emits many differently shaped records, and `parse_kv` gives each
+// field set its own schema. Tenzir splits a batch whenever the schema changes,
+// so an interleaved stream degenerates into single-event batches and the
+// mapping below runs per event. `unordered` tells the engine that only
+// intra-schema order matters, letting it demultiplex the stream into
+// homogeneous batches. The mapping is stateless per event, so nothing depends
+// on the order between events. Measured at ~10x throughput on mixed FortiGate
+// logs; see docs/fortigate-ocsf.md.
+unordered {
+  fortinet = content.parse_kv()
+}
 fortinet::fortigate::ocsf::map event=fortinet
 fortinet.raw_data = move content
 fortinet.raw_data_size = fortinet.raw_data.length_bytes()

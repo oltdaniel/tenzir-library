@@ -293,6 +293,47 @@ event itself.
 | `srcserver`, `devcategory` | `srcserver` is a 0/1 flag qualifying the endpoint rather than describing it. `devcategory` mixes OS families ("Windows") with hardware roles ("Router"), so neither `os.type` nor `hw_info.vendor_name` fits the whole vocabulary; `devtype` already carries the finer value. |
 | `event/*` telemetry (`ha_*`, `vcluster*`, radio and modem readings, connector inventory, FortiClient licence counts) | Appliance telemetry with no OCSF class. See `operators/fortigate/ocsf/base.tql`. |
 
+## Performance
+
+FortiGate emits many differently shaped records, and `parse_kv` gives each
+distinct field set its own schema. Tenzir starts a new batch whenever the
+schema changes, so an interleaved FortiGate stream degenerates into
+single-event batches and the whole mapping runs once per event instead of once
+per batch.
+
+The effect is a cliff rather than a gradient, and it does not amortize: the
+overhead is per event for the life of the pipeline, not a one-off cost when a
+schema is first seen.
+
+| Input (14k events, mapped to Sentinel) | Wall | CPU |
+| --- | --- | --- |
+| one shape | 1.6 s | 1.7 s |
+| two shapes interleaved | 12.4 s | 130 s |
+| six shapes interleaved | 16.2 s | 195 s |
+| realistic mix (~90% traffic) | 31.7 s | 587 s |
+| realistic mix, wrapped in `unordered` | **3.2 s** | **5.3 s** |
+
+The fix is to tell the engine that only intra-schema order matters, which lets
+it demultiplex the stream back into homogeneous batches. Wrapping the parse is
+enough; the mapping downstream does not need to be inside the block:
+
+```tql
+unordered {
+  fortinet = line.parse_kv()
+}
+fortinet::fortigate::ocsf::map event=fortinet
+```
+
+This is safe for every mapping in this package because they are stateless per
+event: nothing depends on the order between two events, only on the contents of
+each. Verified on the full test corpus, `unordered` produces byte-identical
+output. The package's examples all use it.
+
+`sort` triggers the same optimization implicitly, but it buffers the entire
+stream, so it is not usable on a live feed. Neither `batch` nor the
+`tenzir.demand` and `tenzir.import.batch-size` settings make any difference
+here; `unordered` is the only lever that works.
+
 ## Known gaps
 
 - **FortiGuard URL categories are not translated.** Mapping `cat`/`catdesc`
