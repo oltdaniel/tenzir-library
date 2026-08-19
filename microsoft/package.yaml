@@ -18,6 +18,9 @@ description: |
   Graph endpoints for Entra ID sign-ins and directory audits, Defender alerts
   and incidents, Identity Protection risk data, and Intune inventory and
   compliance data.
+
+  `docs/ocsf-sentinel.md` documents which ASIM schema each OCSF class maps to
+  and how the remaining classes reach CommonSecurityLog.
 categories:
 - mappings
 - sources

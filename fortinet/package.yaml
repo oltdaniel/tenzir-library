@@ -13,6 +13,9 @@ description: |
   [FortiGate](https://www.fortinet.com/products/next-generation-firewall),
   parsing FortiGate key-value logs and providing OCSF mappings.
 
+  `docs/fortigate-ocsf.md` records what the mapping does with every field
+  FortiOS emits and why, including the fields deliberately left in `unmapped`.
+
 categories:
 - mappings
 - sources
