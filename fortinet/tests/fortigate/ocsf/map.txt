@@ -2321,51 +2321,6 @@
   },
 }
 {
-  activity_id: 0,
-  activity_name: "Unknown",
-  category_name: "Uncategorized",
-  category_uid: 0,
-  class_name: "Base Event",
-  class_uid: 0,
-  device: {
-    zone: "root",
-  },
-  metadata: {
-    event_code: "110052000",
-    log_format: "kv",
-    log_level: "notice",
-    log_name: "security-rating",
-    original_time: "2019-05-13 14:40:59",
-    product: {
-      name: "FortiGate",
-      vendor_name: "Fortinet",
-    },
-    profiles: [
-      "host",
-    ],
-    type: "event",
-    version: "1.8.0",
-  },
-  raw_data: "date=2019-05-13 time=14:40:59 logid=\"0110052000\" type=\"event\" subtype=\"security-rating\" level=\"notice\" vd=\"root\" eventtime=1557783659536252389 logdesc=\"Security Rating summary\" auditid=1557783648 audittime=1557783659 auditscore=\"5.0\" criticalcount=1 highcount=6 mediumcount=8 lowcount=0 passedcount=38",
-  raw_data_size: 301,
-  severity: "Informational",
-  severity_id: 1,
-  status_detail: "Security Rating summary",
-  time: 2019-05-13T21:40:59.536252389Z,
-  type_name: "Base Event: Unknown",
-  type_uid: 0,
-  unmapped: {
-    auditid: 1557783648,
-    audittime: 1557783659,
-    auditscore: 5.0,
-    criticalcount: 1,
-    highcount: 6,
-    mediumcount: 8,
-    lowcount: 0,
-    passedcount: 38,
-  },
-}
-{
   activity_id: 1,
   activity_name: "Create",
   actor: {
@@ -2416,6 +2371,62 @@
   unmapped: null,
   user: {
     name: "jdoe",
+  },
+}
+{
+  activity_id: 1,
+  activity_name: "Create",
+  category_name: "Findings",
+  category_uid: 2,
+  class_name: "Compliance Finding",
+  class_uid: 2003,
+  compliance: {
+    desc: "FortiGate Security Rating score: 5.0",
+    standards: [
+      "FortiGate Security Rating",
+    ],
+    status: "Fail",
+    status_id: 3,
+  },
+  count: 53,
+  device: {
+    zone: "root",
+  },
+  finding_info: {
+    created_time: 2019-05-13T21:40:59Z,
+    title: "Security Rating summary",
+    uid: "1557783648",
+  },
+  metadata: {
+    event_code: "110052000",
+    log_format: "kv",
+    log_level: "notice",
+    log_name: "security-rating",
+    original_time: "2019-05-13 14:40:59",
+    product: {
+      name: "FortiGate",
+      vendor_name: "Fortinet",
+    },
+    profiles: [
+      "host",
+    ],
+    type: "event",
+    version: "1.8.0",
+  },
+  raw_data: "date=2019-05-13 time=14:40:59 logid=\"0110052000\" type=\"event\" subtype=\"security-rating\" level=\"notice\" vd=\"root\" eventtime=1557783659536252389 logdesc=\"Security Rating summary\" auditid=1557783648 audittime=1557783659 auditscore=\"5.0\" criticalcount=1 highcount=6 mediumcount=8 lowcount=0 passedcount=38",
+  raw_data_size: 301,
+  severity: "Critical",
+  severity_id: 5,
+  status_detail: "Security Rating summary",
+  time: 2019-05-13T21:40:59.536252389Z,
+  type_name: "Compliance Finding: Create",
+  type_uid: 200301,
+  unmapped: {
+    criticalcount: 1,
+    highcount: 6,
+    mediumcount: 8,
+    lowcount: 0,
+    passedcount: 38,
   },
 }
 {

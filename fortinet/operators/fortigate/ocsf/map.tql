@@ -181,6 +181,8 @@ if $event.ocsf.metadata.type == "utm" {
     fortinet::fortigate::ocsf::logs::wad event=$event
   } else if $event.ocsf.metadata.log_name == "wireless" {
     fortinet::fortigate::ocsf::logs::wireless event=$event
+  } else if $event.ocsf.metadata.log_name == "security-rating" {
+    fortinet::fortigate::ocsf::logs::security_rating event=$event
   } else {
     fortinet::fortigate::ocsf::base event=$event
   }

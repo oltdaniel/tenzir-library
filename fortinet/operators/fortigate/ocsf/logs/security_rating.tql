@@ -1,0 +1,81 @@
+---
+description: "FortiGate Security Rating summaries → OCSF Compliance Finding (2003)"
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+@name = "ocsf.compliance_finding"
+
+// FortiGate's Security Rating runs a catalogue of posture checks against the
+// device and reports one summary log per audit: an identifier, a score, and how
+// many checks failed at each severity alongside how many passed. Compliance
+// Finding is the OCSF class for an audit result, so the summary lands there
+// rather than staying a Base Event with no downstream schema.
+$event.ocsf.category_uid = 2
+$event.ocsf.class_uid = 2003
+$event.ocsf.activity_id = 1  // Create: each audit run reports a new result
+$event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+
+// `auditid` identifies the audit run and `audittime` is when it completed.
+// Both are epoch seconds, and `auditid` doubles as the run's identifier.
+if $event.fortinet.auditid? != null {
+  $event.ocsf.finding_info = {
+    uid: (move $event.fortinet.auditid).string(),
+    title: $event.ocsf.status_detail? else "Security Rating summary",
+  }
+}
+if $event.fortinet.audittime? != null {
+  $event.ocsf.finding_info.created_time = (move $event.fortinet.audittime).seconds().from_epoch()
+}
+
+// The per-severity failure counts decide the overall verdict: the audit passed
+// only when nothing failed at any severity.
+$event.ocsf._failed = ($event.fortinet.criticalcount? else 0) + ($event.fortinet.highcount? else 0) + ($event.fortinet.mediumcount? else 0) + ($event.fortinet.lowcount? else 0)
+
+// OCSF separates a clean audit (Pass) from one with findings serious enough to
+// act on (Fail) and one with only minor findings (Warning), so the verdict
+// follows the worst severity that actually failed rather than the bare count.
+$event.ocsf._severe = ($event.fortinet.criticalcount? else 0) + ($event.fortinet.highcount? else 0)
+$event.ocsf.compliance = {
+  // FortiGate's rating is its own posture standard rather than an external one
+  // such as CIS or PCI DSS, so it names itself.
+  standards: ["FortiGate Security Rating"],
+  status_id: 1 if $event.ocsf._failed == 0 else 3 if $event.ocsf._severe > 0 else 2,
+}
+drop $event.ocsf._severe
+
+// `auditscore` is FortiGate's posture score, where a *higher* value is better.
+// It is deliberately not mapped to `risk_score`, which OCSF orders the other
+// way round, so recording it there would invert the meaning of the event.
+if $event.fortinet.auditscore? != null {
+  $event.ocsf.compliance.desc = f"FortiGate Security Rating score: {move $event.fortinet.auditscore}"
+}
+
+// `count` is the number of checks the audit evaluated: everything that failed
+// at some severity plus everything that passed.
+$event.ocsf.count = $event.ocsf._failed + ($event.fortinet.passedcount? else 0)
+
+// Raise the event severity to the worst severity that actually failed, so a
+// summary carrying critical findings is not filed as a routine notice.
+if ($event.fortinet.criticalcount? else 0) > 0 {
+  $event.ocsf.severity_id = 5
+} else if ($event.fortinet.highcount? else 0) > 0 {
+  $event.ocsf.severity_id = 4
+} else if ($event.fortinet.mediumcount? else 0) > 0 {
+  $event.ocsf.severity_id = 3
+} else if ($event.fortinet.lowcount? else 0) > 0 {
+  $event.ocsf.severity_id = 2
+}
+
+drop $event.ocsf._failed
+
+// `criticalcount`, `highcount`, `mediumcount`, `lowcount`, and `passedcount`
+// stay in `unmapped`. Compliance Finding models an audit as a list of
+// individual `compliance.checks`, each with its own name and status, whereas
+// FortiGate reports only totals per severity. Synthesising one check per bucket
+// would invent findings that the device never named, so the totals are kept
+// verbatim and their aggregate is expressed through `status_id`, `count`, and
+// `severity_id` above.
