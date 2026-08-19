@@ -1,0 +1,53 @@
+---
+description: >-
+  Maps validated OCSF 1.8 events to Microsoft Sentinel, choosing the best
+  destination table per event: an ASIM schema where one exists, and
+  CommonSecurityLog otherwise.
+args:
+  named:
+    - name: event
+      description: The field that holds the OCSF event to map.
+      type: field
+      default: this
+---
+
+// `microsoft::asim::ocsf::map` is deliberately strict: it fails on a class it
+// has no ASIM schema for, which is what you want while building a mapping.
+// This operator is the shipping counterpart, and it guarantees a destination
+// for every event instead.
+//
+// ASIM is preferred wherever it reaches, because its schemas are normalized
+// across products and Sentinel's built-in content queries them. Everything else
+// falls back to CommonSecurityLog, which every Sentinel workspace already has
+// and which keeps the source's own fields in `AdditionalExtensions`.
+//
+// Keep this list in step with the classes `microsoft::asim::ocsf::map` handles;
+// a class listed here but missing there fails at runtime rather than falling
+// back.
+let $asim_classes = [
+  1001,    // File System Activity
+  1006,    // Scheduled Job Activity
+  1007,    // Process Activity
+  1008,    // Event Log Activity
+  2003,    // Compliance Finding
+  2004,    // Detection Finding
+  3001,    // Account Change
+  3002,    // Authentication
+  3003,    // Authorize Session
+  3004,    // Entity Management
+  3006,    // Group Management
+  4001,    // Network Activity
+  4002,    // HTTP Activity
+  4003,    // DNS Activity
+  4004,    // DHCP Activity
+  4006,    // SMB Activity
+  4007,    // SSH Activity
+  4014,    // Tunnel Activity
+  201004,  // Windows Service Activity
+]
+
+if $event.class_uid? in $asim_classes {
+  microsoft::asim::ocsf::map event=$event
+} else {
+  microsoft::sentinel::common_security_log event=$event
+}

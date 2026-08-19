@@ -1,0 +1,164 @@
+---
+description: >-
+  Maps any validated OCSF 1.8 event to a Microsoft Sentinel CommonSecurityLog
+  record. This is the destination for OCSF classes that no ASIM schema covers,
+  so that every event still reaches a Sentinel table that analytics rules,
+  workbooks, and hunting queries already understand.
+args:
+  named:
+    - name: event
+      description: The field that holds the OCSF event to map.
+      type: field
+      default: this
+---
+
+// CommonSecurityLog is the table Sentinel fills from CEF, so its columns are
+// the CEF extension dictionary under Microsoft's own names. Each assignment
+// below notes the CEF key the column comes from, because that pairing is what
+// makes the result recognizable to existing CEF-based content.
+$event = {...$event, ocsf: $event, csl: {}}
+
+@name = "sentinel.common_security_log"
+
+// The CEF header. `DeviceEventClassID` identifies the event type within the
+// product, which is exactly what `metadata.event_code` holds; `Activity` is the
+// header's Name field, and the OCSF activity is the most specific label there.
+$event.csl.TimeGenerated = $event.ocsf.time?
+$event.csl.DeviceVendor = $event.ocsf.metadata?.product?.vendor_name? else "Unknown"
+$event.csl.DeviceProduct = $event.ocsf.metadata?.product?.name? else "Unknown"
+$event.csl.DeviceVersion = $event.ocsf.metadata?.product?.version?
+$event.csl.DeviceEventClassID = $event.ocsf.metadata?.event_code? else $event.ocsf.type_uid?.string()
+$event.csl.Activity = $event.ocsf.activity_name? else $event.ocsf.class_name?
+
+// CEF grades severity 0-10 while OCSF uses a six-step scale, so the OCSF steps
+// are spread over the CEF range rather than passed through as raw numbers.
+match $event.ocsf.severity_id? {
+  1 => { $event.csl.LogSeverity = 1 }
+  2 => { $event.csl.LogSeverity = 3 }
+  3 => { $event.csl.LogSeverity = 5 }
+  4 => { $event.csl.LogSeverity = 7 }
+  5 => { $event.csl.LogSeverity = 9 }
+  6 => { $event.csl.LogSeverity = 10 }
+  _ => { $event.csl.LogSeverity = 0 }
+}
+$event.csl.OriginalLogSeverity = $event.ocsf.severity?
+
+$event.csl.Message = $event.ocsf.message?                       // msg
+$event.csl.Reason = $event.ocsf.status_detail? else $event.ocsf.status_code?  // reason
+$event.csl.EventOutcome = $event.ocsf.status?                   // outcome
+$event.csl.DeviceAction = $event.ocsf.action? else $event.ocsf.disposition?   // act
+$event.csl.EventCount = $event.ocsf.count?                      // cnt
+$event.csl.StartTime = $event.ocsf.start_time?                  // start
+$event.csl.EndTime = $event.ocsf.end_time?                      // end
+$event.csl.ExternalID = $event.ocsf.finding_info?.uid? else $event.ocsf.metadata?.uid?  // externalId
+$event.csl.DeviceFacility = $event.ocsf.metadata?.log_name?     // deviceFacility
+
+// The reporting device.
+$event.csl.DeviceName = $event.ocsf.device?.hostname?           // dvchost
+$event.csl.DeviceExternalID = $event.ocsf.device?.uid?          // deviceExternalId
+
+// Network endpoints. Detection Finding carries these inside an evidence
+// artifact rather than at the top level, so fall back to the first evidence;
+// otherwise a firewall detection would arrive with no addresses at all.
+$event.evidence = $event.ocsf.evidences?[0]? else {}
+$event.src = $event.ocsf.src_endpoint? else $event.evidence.src_endpoint? else {}
+$event.dst = $event.ocsf.dst_endpoint? else $event.evidence.dst_endpoint? else {}
+$event.conn = $event.ocsf.connection_info? else $event.evidence.connection_info? else {}
+
+$event.csl.SourceIP = $event.src.ip?                            // src
+$event.csl.SourcePort = $event.src.port?                        // spt
+$event.csl.SourceHostName = $event.src.hostname?                // shost
+$event.csl.SourceMACAddress = $event.src.mac?                   // smac
+$event.csl.SourceUserName = $event.src.owner?.name?             // suser
+$event.csl.SourceTranslatedAddress = $event.src.proxy_endpoint?.ip?
+$event.csl.SourceTranslatedPort = $event.src.proxy_endpoint?.port?
+$event.csl.DeviceInboundInterface = $event.src.interface_name?  // deviceInboundInterface
+
+$event.csl.DestinationIP = $event.dst.ip?                       // dst
+$event.csl.DestinationPort = $event.dst.port?                   // dpt
+$event.csl.DestinationHostName = $event.dst.hostname?           // dhost
+$event.csl.DestinationMACAddress = $event.dst.mac?              // dmac
+$event.csl.DestinationUserName = $event.dst.owner?.name?        // duser
+$event.csl.DestinationTranslatedAddress = $event.dst.proxy_endpoint?.ip?
+$event.csl.DestinationTranslatedPort = $event.dst.proxy_endpoint?.port?
+$event.csl.DeviceOutboundInterface = $event.dst.interface_name? // deviceOutboundInterface
+
+// `Protocol` is CEF's `proto`, a transport name rather than a number, so the
+// IANA protocol number is resolved for the three that carry almost all traffic
+// and left unset otherwise rather than emitting a bare integer.
+match $event.conn.protocol_num? {
+  1 => { $event.csl.Protocol = "ICMP" }
+  6 => { $event.csl.Protocol = "TCP" }
+  17 => { $event.csl.Protocol = "UDP" }
+  58 => { $event.csl.Protocol = "IPv6-ICMP" }
+  _ => {}
+}
+$event.csl.ApplicationProtocol = $event.ocsf.app_protocol_name? else $event.ocsf.protocol_name?  // app
+
+// CEF's `deviceDirection` is binary: 0 inbound, 1 outbound. OCSF also
+// distinguishes lateral traffic, which has no CEF equivalent and so stays unset
+// rather than being forced into one of the two.
+match $event.conn.direction_id? {
+  1 => { $event.csl.CommunicationDirection = 0 }
+  2 => { $event.csl.CommunicationDirection = 1 }
+  _ => {}
+}
+
+// Traffic counters. `traffic` describes one observation interval and
+// `cumulative_traffic` a session lifetime; CEF has a single pair, so the
+// interval counters win when both are present.
+$event.csl.ReceivedBytes = $event.ocsf.traffic?.bytes_in? else $event.ocsf.cumulative_traffic?.bytes_in?  // in
+$event.csl.SentBytes = $event.ocsf.traffic?.bytes_out? else $event.ocsf.cumulative_traffic?.bytes_out?    // out
+
+// The request, from whichever class carries one.
+$event.url = $event.ocsf.http_request?.url? else $event.ocsf.url? else $event.evidence.url? else {}
+if $event.url.hostname? != null and $event.url.path? != null {
+  $event.csl.RequestURL = f"{$event.url.hostname}{$event.url.path}"
+} else {
+  $event.csl.RequestURL = $event.url.url_string? else $event.url.path? else $event.url.hostname?
+}
+$event.csl.RequestMethod = $event.ocsf.http_request?.http_method? else $event.evidence.http_request?.http_method?
+$event.csl.RequestClientApplication = $event.ocsf.http_request?.user_agent? else $event.evidence.http_request?.user_agent?
+
+// Files, again preferring the top level and falling back to evidence.
+$event.file = $event.ocsf.file? else $event.evidence.file? else {}
+$event.csl.FileName = $event.file.name?                         // fname
+$event.csl.FilePath = $event.file.path?                         // filePath
+$event.csl.FileSize = $event.file.size?                         // fsize
+$event.csl.FileHash = $event.file.hashes?[0]?.value?            // fileHash
+
+// Identities. OCSF splits the actor from the subject; CEF has one source user,
+// so the actor wins where both exist because it names who acted.
+$event.csl.SourceUserName = $event.ocsf.actor?.user?.name? else $event.ocsf.user?.name? else $event.csl.SourceUserName
+$event.csl.SourceUserID = $event.ocsf.actor?.user?.uid? else $event.ocsf.user?.uid?  // suid
+
+// Email Activity has no ASIM schema, so it arrives here. Its envelope is the
+// event's whole substance, and CEF's documented email convention is to carry
+// the addresses as the source and destination users.
+if $event.ocsf.email? != null {
+  $event.csl.SourceUserName = $event.ocsf.email.from? else $event.csl.SourceUserName
+  $event.csl.DestinationUserName = $event.ocsf.email.to?[0]? else $event.csl.DestinationUserName
+  $event.csl.FileName = $event.ocsf.email.files?[0]?.name? else $event.csl.FileName
+}
+
+// The custom-string slots are the only place a CEF consumer expects
+// product-specific data, and each must be paired with its label. They carry the
+// OCSF identity so a reader of the table can tell what the record originally
+// was, which is otherwise lost once the event leaves the OCSF schema.
+$event.csl.DeviceCustomString1 = $event.ocsf.class_name?
+$event.csl.DeviceCustomString1Label = "OcsfClassName"
+$event.csl.DeviceCustomNumber1 = $event.ocsf.class_uid?
+$event.csl.DeviceCustomNumber1Label = "OcsfClassUid"
+if $event.ocsf.email?.subject? != null {
+  $event.csl.DeviceCustomString2 = $event.ocsf.email.subject
+  $event.csl.DeviceCustomString2Label = "EmailSubject"
+}
+
+// Everything the source reported that OCSF had no field for. Sentinel treats
+// `AdditionalExtensions` as the catch-all for non-standard CEF keys, so the
+// vendor's own fields stay queryable instead of being dropped at the boundary.
+if $event.ocsf.unmapped? != null {
+  $event.csl.AdditionalExtensions = $event.ocsf.unmapped.print_kv()
+}
+
+$event = move $event.csl
