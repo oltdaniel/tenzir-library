@@ -27,20 +27,38 @@ if $event.fortinet.direction? == "incoming" {
 }
 drop $event.fortinet.direction?
 
-// Email envelope fields.
+// Email envelope fields. `recipient` is the envelope (SMTP RCPT TO) address
+// while `to` is the header address; both are recipients, so they are combined
+// and de-duplicated rather than one overwriting the other.
 $event.ocsf.email = {
   from: move $event.fortinet.from,
   to: [move $event.fortinet.to],
   subject: move $event.fortinet.subject,
   size: move $event.fortinet.size,
 }
+// FortiOS usually reports only the local part here ("testpc3") while `to`
+// carries the full address, so a bare name would add a recipient that does not
+// exist. Only a value that is actually an address is treated as one; anything
+// else stays in `unmapped` as the duplicate it is.
+if $event.fortinet.recipient?.string().match_regex("@") == true {
+  $event.ocsf.email.to = $event.ocsf.email.to.add((move $event.fortinet.recipient).string()).distinct()
+}
+
+// `attachment` is a yes/no flag saying whether the message carried an
+// attachment at all, not the name of one. OCSF models attachments as
+// `email.files`, a list of the actual files, and has no separate boolean, so
+// the flag stays in `unmapped` rather than becoming a file named "no".
 
 // `service` identifies the email protocol (IMAPS, SMTPS, POP3S).
 // Use move so network_endpoints does not also map it to dst_endpoint.svc_name.
 $event.ocsf.protocol_name = move $event.fortinet.service
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
-// Email Activity has no connection_info field; proto/sessionid stay in unmapped.
+
+// Email Activity carries neither `connection_info` nor `traffic` in OCSF 1.8,
+// so `proto` (IP protocol number) and `sessionid` (the FortiOS session handle)
+// have nowhere to go and stay in `unmapped`. The endpoints above still record
+// which hosts the message moved between.
 
 fortinet::fortigate::ocsf::security_control event=$event
 

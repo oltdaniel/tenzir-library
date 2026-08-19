@@ -34,6 +34,37 @@ if $event.fortinet.app? != null {
   $event.ocsf.app_name = move $event.fortinet.app
 }
 
+// `url` is the resource the matched application requested. Network Activity
+// carries a `url` object of its own, so the request is recorded there without
+// having to reclassify the event as HTTP Activity, which would be wrong for the
+// non-HTTP applications app control also matches.
+if $event.fortinet.url? != null {
+  $event.ocsf.url = {
+    hostname: $event.ocsf.dst_endpoint.hostname?,
+    path: move $event.fortinet.url,
+  }
+}
+
+// `scertcname`/`scertissuer` are the CN and issuer of the server certificate
+// seen when the matched application ran over TLS.
+if $event.fortinet.scertcname? != null or $event.fortinet.scertissuer? != null {
+  $event.ocsf.tls = {
+    certificate: {
+      subject: move $event.fortinet.scertcname?,
+      issuer: move $event.fortinet.scertissuer?,
+    },
+  }
+}
+
+// `incidentserialno` is the identifier FortiOS shares across every log record
+// raised for the same detection, which is what `correlation_uid` denotes.
+if $event.fortinet.incidentserialno? != null {
+  $event.ocsf.metadata.correlation_uid = (move $event.fortinet.incidentserialno).string()
+}
+
+// `apprisk` is the application-control risk rating for `app`.
+fortinet::fortigate::ocsf::risk event=$event
+
 // `applist` is the application control profile; used as policy.name instead
 // of `profile` since app-ctrl logs use applist for the applied rule set.
 fortinet::fortigate::ocsf::security_control event=$event

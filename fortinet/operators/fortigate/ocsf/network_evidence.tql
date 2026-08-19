@@ -1,8 +1,10 @@
 ---
 description: >-
-  Map FortiGate network fields into ocsf.evidences for Detection Finding.
-  Puts src_endpoint, dst_endpoint, and connection_info inside the evidence
-  artifact where Detection Finding can carry them.
+  Map the FortiGate fields that describe what a UTM engine inspected into
+  `ocsf.evidences` for Detection Finding. Covers the network endpoints and
+  connection, the transferred file, the requested URL, and the requesting user
+  agent, all of which Detection Finding can only carry inside an evidence
+  artifact rather than at the top level.
 args:
   named:
     - name: event
@@ -20,16 +22,74 @@ if $event.fortinet.hostname? != null {
 
 fortinet::fortigate::ocsf::connection_info event=$event
 
-// Only emit evidences when at least one endpoint IP is present; an all-null
-// evidence record is unhelpful and drop_null_fields does not recurse into lists.
-if $event.ocsf.src_endpoint.ip? != null or $event.ocsf.dst_endpoint.ip? != null {
+// `filename` and `filesize` describe the object the engine inspected.
+//
+// `filetype` is deliberately left in `unmapped`: FortiOS reports a file
+// *format* there ("msoffice", "pdf", "exe"), while OCSF's `file.type_id`
+// enumerates file *kinds* (regular file, folder, symbolic link). The two
+// vocabularies describe different things, and `mime_type` would need a real
+// MIME type that FortiOS does not provide.
+$event.ocsf._file = null
+if $event.fortinet.filename? != null or $event.fortinet.filesize? != null {
+  $event.ocsf._file = {
+    name: move $event.fortinet.filename?,
+    size: move $event.fortinet.filesize?,
+  }
+}
+
+// `analyticscksum` is the checksum FortiGuard computed for a file submitted to
+// sandbox analysis. FortiOS emits a 64-character hex digest, which is SHA-256
+// (algorithm_id 3); anything else is recorded without claiming an algorithm.
+if $event.fortinet.analyticscksum? != null {
+  $event.ocsf._checksum = (move $event.fortinet.analyticscksum).string()
+  $event.ocsf._file = {
+    ...$event.ocsf._file?,
+    hashes: [{
+      algorithm_id: 3 if $event.ocsf._checksum.length_bytes() == 64 else 0,
+      value: $event.ocsf._checksum,
+    }],
+  }
+  drop $event.ocsf._checksum
+}
+
+// `url` is the resource the inspected payload was fetched from or sent to.
+// FortiOS logs the path here and the authority separately in `hostname`, which
+// is already on the destination endpoint above.
+$event.ocsf._url = null
+if $event.fortinet.url? != null {
+  $event.ocsf._url = {
+    hostname: $event.ocsf.dst_endpoint.hostname?,
+    path: move $event.fortinet.url,
+  }
+}
+
+// `agent` is the User-Agent header of the request that carried the payload.
+$event.ocsf._http_request = null
+if $event.fortinet.agent? != null {
+  $event.ocsf._http_request = {
+    user_agent: move $event.fortinet.agent,
+  }
+}
+
+// Emit evidence when anything above was actually observed. An all-null
+// evidence record is unhelpful, and `drop_null_fields` does not recurse into
+// lists, so the emptiness check has to happen here.
+$event.ocsf._has_evidence = $event.ocsf.src_endpoint.ip? != null or $event.ocsf.dst_endpoint.ip? != null or $event.ocsf._file != null or $event.ocsf._url != null or $event.ocsf._http_request != null
+if $event.ocsf._has_evidence {
   $event.ocsf.evidences = [{
     src_endpoint: move $event.ocsf.src_endpoint,
     dst_endpoint: move $event.ocsf.dst_endpoint,
     connection_info: move $event.ocsf.connection_info,
+    file: $event.ocsf._file,
+    url: $event.ocsf._url,
+    http_request: $event.ocsf._http_request,
   }]
 } else {
   drop $event.ocsf.src_endpoint?
   drop $event.ocsf.dst_endpoint?
   drop $event.ocsf.connection_info?
 }
+drop $event.ocsf._has_evidence
+drop $event.ocsf._file
+drop $event.ocsf._url
+drop $event.ocsf._http_request

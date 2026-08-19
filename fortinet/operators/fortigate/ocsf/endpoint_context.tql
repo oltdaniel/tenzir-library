@@ -1,0 +1,77 @@
+---
+description: >-
+  Enrich already-built OCSF src/dst endpoints with the contextual FortiGate
+  fields that accompany them: geo location, firewall address-object UUIDs,
+  the MAC seen behind a NAT device, and the device fingerprint FortiOS derives
+  from traffic.
+
+  Call this after `src_endpoint`/`dst_endpoint` exist, since it only adds to
+  them. Every field is optional, so log families that carry none are unaffected.
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+// `srccountry`/`dstcountry` are the GeoIP countries FortiOS resolved for the
+// two addresses. FortiOS spells them as English country names rather than the
+// ISO 3166-1 alpha-2 codes OCSF nominally documents. The name is kept verbatim
+// because it is what Sentinel's ASIM `SrcGeoCountry`/`DstGeoCountry` expect,
+// so passing the code through would force a reverse lookup one hop later.
+//
+// "Reserved" is FortiOS's placeholder for addresses with no geographic
+// meaning (RFC 1918, loopback, multicast). It is not a country, so it is
+// dropped rather than recorded as one.
+if $event.fortinet.srccountry? != null and $event.fortinet.srccountry != "Reserved" {
+  $event.ocsf.src_endpoint.location = {
+    country: move $event.fortinet.srccountry,
+  }
+}
+drop $event.fortinet.srccountry?
+
+if $event.fortinet.dstcountry? != null and $event.fortinet.dstcountry != "Reserved" {
+  $event.ocsf.dst_endpoint.location = {
+    country: move $event.fortinet.dstcountry,
+  }
+}
+drop $event.fortinet.dstcountry?
+
+// `srcuuid`/`dstuuid` are the UUIDs of the firewall address objects that
+// matched the endpoints, not identifiers of the hosts themselves. They are the
+// stable handle for the configured object, which is what `uid` denotes here.
+if $event.fortinet.srcuuid? != null {
+  $event.ocsf.src_endpoint.uid = move $event.fortinet.srcuuid
+}
+if $event.fortinet.dstuuid? != null {
+  $event.ocsf.dst_endpoint.uid = move $event.fortinet.dstuuid
+}
+
+// `mastersrcmac` is the MAC of the device that originated the session when
+// FortiGate sees it behind a NAT-ing device; `srcmac` is the MAC of the
+// immediate previous hop. Prefer the originator, since that is the host the
+// event is actually about, and only fall back to the hop when it is absent.
+if $event.fortinet.mastersrcmac? != null {
+  $event.ocsf.src_endpoint.mac = move $event.fortinet.mastersrcmac
+  drop $event.fortinet.srcmac?
+} else if $event.fortinet.srcmac? != null {
+  $event.ocsf.src_endpoint.mac = move $event.fortinet.srcmac?
+}
+
+// `devtype` is the device class FortiOS fingerprints from traffic, e.g.
+// "Windows PC" or "Router/NAT Device". OCSF types `endpoint.type` as a free
+// string, so the FortiOS label carries over as-is.
+if $event.fortinet.devtype? != null {
+  $event.ocsf.src_endpoint.type = move $event.fortinet.devtype
+}
+
+// Deliberately left in `unmapped`:
+//
+// - `devcategory` is FortiOS's coarser grouping above `devtype`, and it mixes
+//   operating-system families ("Windows", "Android") with hardware roles
+//   ("Router", "Printer"). `os.type` would misfile the hardware roles and
+//   `hw_info.vendor_name` would misfile the OS families, so neither is right
+//   for the whole vocabulary. `devtype` above already carries the finer value.
+// - `srcserver` is a 0/1 flag marking whether the source acted as the server
+//   side of the session. It qualifies the endpoint rather than describing it,
+//   and the OCSF endpoint object has no slot for that.

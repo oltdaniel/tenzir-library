@@ -34,6 +34,17 @@ $event.ocsf.finding_info = {
 }
 drop $event.ocsf._attackid
 
+// `count` is how many times the anomaly fired within the reporting interval,
+// which is exactly what the OCSF base-event `count` records.
+if $event.fortinet.count? != null {
+  $event.ocsf.count = move $event.fortinet.count
+}
+
+// `icmpid`, `icmptype`, and `icmpcode` identify the ICMP datagram that tripped
+// a flood signature. OCSF models transport-layer detail only as far as
+// `connection_info.protocol_num`, and has no ICMP object on any class, so they
+// stay in `unmapped`.
+
 // Network context goes into evidences for Detection Finding.
 fortinet::fortigate::ocsf::network_endpoints event=$event
 fortinet::fortigate::ocsf::connection_info event=$event

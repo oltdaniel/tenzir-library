@@ -29,6 +29,22 @@ if $event.fortinet.reason? != null {
   $event.ocsf.status_detail = move $event.fortinet.reason
 }
 
+// `certhash` is the hash of the server certificate seen during inspection.
+// FortiOS does not name the algorithm; a 40-character digest is SHA-1 and a
+// 64-character one SHA-256, and anything else is recorded without a claim.
+if $event.fortinet.certhash? != null {
+  $event.ocsf._certhash = (move $event.fortinet.certhash).string()
+  $event.ocsf.tls = {
+    certificate: {
+      fingerprints: [{
+        algorithm_id: 2 if $event.ocsf._certhash.length_bytes() == 40 else 3 if $event.ocsf._certhash.length_bytes() == 64 else 0,
+        value: $event.ocsf._certhash,
+      }],
+    },
+  }
+  drop $event.ocsf._certhash
+}
+
 // SSL inspection is a security control.
 fortinet::fortigate::ocsf::security_control event=$event
 

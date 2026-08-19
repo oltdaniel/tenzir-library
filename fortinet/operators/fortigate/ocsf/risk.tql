@@ -22,3 +22,13 @@ if $event.fortinet.crlevel? != null {
   }
   $event.ocsf.risk_level_id = $levels[move $event.fortinet.crlevel]? else 99
 }
+
+// `apprisk` is the risk rating the application-control database assigns to the
+// detected application (low < elevated < medium < high < critical). It rates
+// the application, not the event, so it must not overwrite the composite
+// `risk_level_id` above; FortiOS also grades it on five steps that do not line
+// up with the four OCSF risk levels. `risk_details` is the free-form companion
+// to `risk_level_id`, so the rating is recorded there with its subject named.
+if $event.fortinet.apprisk? != null {
+  $event.ocsf.risk_details = f"application risk: {move $event.fortinet.apprisk}"
+}

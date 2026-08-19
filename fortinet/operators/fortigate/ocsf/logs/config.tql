@@ -31,11 +31,29 @@ if $event.fortinet.user? != null {
 // "ssh(10.0.0.1)". Local access methods such as "jsconsole" carry no address,
 // and the parentheses can hold a non-address such as "GUI(local)", so require
 // something address-shaped rather than parsing whatever is in there.
-// Only the address is consumed here; `ui` itself stays in `unmapped`.
 if $event.fortinet.ui?.match_regex(r"\([0-9a-fA-F.:]+\)$") == true {
   $event.ocsf.src_endpoint = {
     ip: $event.fortinet.ui.split("(")[1].trim_end(")").ip(),
   }
+}
+
+// The channel itself -- "GUI", "ssh", "jsconsole" -- is how the administrator
+// reached the device, which is what `actor.session.terminal` records. Strip the
+// address already consumed above so the channel is not repeated.
+if $event.fortinet.ui? != null {
+  $event.ocsf.actor = {
+    ...$event.ocsf.actor?,
+    session: {
+      terminal: (move $event.fortinet.ui).split("(")[0],
+    },
+  }
+}
+
+// `cfgtid` is the configuration transaction ID. FortiGate emits one log per
+// changed attribute and repeats the transaction ID across all of them, so it is
+// the handle that stitches a single administrative edit back together.
+if $event.fortinet.cfgtid? != null {
+  $event.ocsf.metadata.correlation_uid = (move $event.fortinet.cfgtid).string()
 }
 
 // `cfgobj` is the object that changed; changes to a global setting report only
@@ -53,6 +71,12 @@ if $event.fortinet.cfgpath.starts_with("user.local") {
   $event.ocsf.user = {
     name: move $event.config_object,
   }
+  // `cfgattr` names the attribute that changed, e.g. "type[password]". Account
+  // Change has no structured slot for a per-attribute diff, so it is recorded
+  // as the detail behind the event's outcome.
+  if $event.fortinet.cfgattr? != null {
+    $event.ocsf.status_detail = move $event.fortinet.cfgattr
+  }
   drop $event.fortinet.cfgpath
 } else if $event.fortinet.cfgpath.starts_with("user.group") {
   @name = "ocsf.group_management"
@@ -62,6 +86,10 @@ if $event.fortinet.cfgpath.starts_with("user.local") {
   $event.ocsf.activity_id = $group_activities[$event.fortinet.action?]? else 99
   $event.ocsf.group = {
     name: move $event.config_object,
+  }
+  // As above: Group Management carries no attribute-level diff either.
+  if $event.fortinet.cfgattr? != null {
+    $event.ocsf.status_detail = move $event.fortinet.cfgattr
   }
   drop $event.fortinet.cfgpath
 } else {

@@ -45,6 +45,13 @@ if $event.vpn_message_id == "39426" {
   $event.ocsf.src_endpoint = {
     ip: move $event.fortinet.remip?,
   }
+  // `action` is always "ssl-login-fail" here, which the class and status above
+  // already say; consume it so it does not reappear as unmapped noise.
+  drop $event.fortinet.action?
+  // `tunnelid` and `tunneltype` are still present on a failed login, but the
+  // login failed, so no tunnel was established: `tunnelid` is 0 and the type
+  // only names the portal mode that was attempted. Recording either as a tunnel
+  // would assert a session that never existed, so both stay in `unmapped`.
 } else {
   @name = "ocsf.tunnel_activity"
   $event.ocsf.category_uid = 4
@@ -91,6 +98,11 @@ if $event.vpn_message_id == "39426" {
       $event.ocsf.src_endpoint = move $event.ocsf.local_endpoint
       $event.ocsf.dst_endpoint = move $event.ocsf.remote_endpoint
     }
+    // `init` and `role` have done their work by orienting the endpoints above;
+    // OCSF expresses the outcome through which endpoint is the source, so the
+    // raw values are consumed rather than restated.
+    drop $event.fortinet.init?
+    drop $event.fortinet.role?
   } else {
     // Tunnel-level shape. Only the remote peer is named. On SSL-VPN it is the
     // client dialling in, so it is the source; on an IPsec tunnel event it is
@@ -119,7 +131,33 @@ if $event.vpn_message_id == "39426" {
       uid: (move $event.fortinet.tunnelid).string(),
     }
   }
+  // `phase2_name` names the IPsec phase-2 selector. On IKE logs that is the
+  // closest thing to a tunnel name, so it fills in when `vpntunnel` is absent.
+  if $event.fortinet.phase2_name? != null {
+    $event.ocsf.tunnel_interface = {
+      ...$event.ocsf.tunnel_interface?,
+      name: $event.ocsf.tunnel_interface.name? else (move $event.fortinet.phase2_name),
+    }
+    drop $event.fortinet.phase2_name?
+  }
+  // `tunnelip` is the address on the tunnel interface itself, not on either
+  // peer: the virtual adapter the tunnel terminates on.
+  if $event.fortinet.tunnelip? != null {
+    $event.ocsf.tunnel_interface = {
+      ...$event.ocsf.tunnel_interface?,
+      ip: move $event.fortinet.tunnelip,
+    }
+  }
   $event.ocsf.protocol_name = (move $event.fortinet.tunneltype?) else "IPSec"
+
+  // `dst_host` is the internal host the client reached through the tunnel,
+  // which SSL-VPN web mode reports instead of a destination address.
+  if $event.fortinet.dst_host? != null {
+    $event.ocsf.dst_endpoint = {
+      ...$event.ocsf.dst_endpoint?,
+      hostname: (move $event.fortinet.dst_host).string(),
+    }
+  }
 
   // `dir` is the negotiation direction on IKE logs.
   $event.ocsf.connection_info = {
@@ -180,3 +218,13 @@ if $event.fortinet.reason? != null {
   $event.ocsf.status_code = move $event.fortinet.reason
 }
 drop $event.fortinet.result?
+
+// Deliberately left in `unmapped`, all of them IKE and SSL-VPN protocol
+// internals that OCSF's Tunnel Activity class does not model:
+//
+// - `cookies` is the pair of IKE SPI cookies identifying the negotiation.
+//   `session.uid` already carries the tunnel identity FortiGate assigns.
+// - `mode` ("main" or "aggressive") is the IKE phase-1 exchange mode and
+//   `stage` the numbered step within that exchange.
+// - `nextstat` is how many seconds until the next statistics log for a live
+//   tunnel. It describes FortiOS's own reporting cadence, not the tunnel.

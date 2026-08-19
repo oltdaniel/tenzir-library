@@ -224,8 +224,16 @@
   DvcAction: "Deny",
   AdditionalFields: {
     ocsf_firewall_rule_uid: "1",
-    ocsf_unmapped: {
-      certhash: "1115ec1857ed7f937301ff5e02f6b0681cf2ec4e",
+    ocsf_tls: {
+      certificate: {
+        fingerprints: [
+          {
+            algorithm: "SHA-1",
+            algorithm_id: 2,
+            value: "1115ec1857ed7f937301ff5e02f6b0681cf2ec4e",
+          },
+        ],
+      },
     },
   },
 }
@@ -382,8 +390,6 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appcat: "unscanned",
     },
   },
@@ -414,9 +420,14 @@
   SrcHostname: null,
   SrcPortNumber: 58012,
   SrcMacAddr: "a2:e9:00:ec:40:01",
+  SrcDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  SrcDvcIdType: "Other",
   DstIpAddr: 23.59.154.35,
   DstHostname: null,
   DstPortNumber: 80,
+  DstDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  DstDvcIdType: "Other",
+  DstGeoCountry: "Canada",
   DvcInboundInterface: "port12",
   DvcOutboundInterface: "port11",
   SrcNatIpAddr: 10.1.100.11,
@@ -443,18 +454,10 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      srcuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstcountry: "Canada",
-      srccountry: "Reserved",
       appid: 34050,
       appcat: "Web.Client",
-      apprisk: "elevated",
-      applist: "g-default",
       countapp: 1,
-      mastersrcmac: "a2:e9:00:ec:40:01",
       srcserver: 0,
-      utmref: "65500-742",
     },
   },
 }
@@ -502,8 +505,6 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appcat: "unscanned",
     },
   },
@@ -528,9 +529,11 @@
   SrcIpAddr: 208.91.114.4,
   SrcHostname: null,
   SrcPortNumber: 50463,
+  SrcGeoCountry: "Canada",
   DstIpAddr: 104.80.88.154,
   DstHostname: null,
   DstPortNumber: 443,
+  DstGeoCountry: "United States",
   DvcInboundInterface: "port1",
   DvcOutboundInterface: "port1",
   NetworkSessionId: "2193276",
@@ -551,14 +554,9 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      dstcountry: "United States",
-      srccountry: "Canada",
       appcat: "unscanned",
       countips: 1,
       craction: 32768,
-      sentdelta: 0,
-      rcvddelta: 0,
-      utmref: "65162-7772",
     },
   },
 }
@@ -712,9 +710,13 @@
   SrcHostname: null,
   SrcPortNumber: 60446,
   SrcMacAddr: "a2:e9:00:ec:40:01",
+  SrcDvcId: "48420c8a-5c88-51e9-0424-a37f9e74621e",
+  SrcDvcIdType: "Other",
   DstIpAddr: 172.16.200.55,
   DstHostname: null,
   DstPortNumber: 80,
+  DstDvcId: "187d6f46-5c86-51e9-70a0-fadcfc349c3e",
+  DstDvcIdType: "Other",
   DvcInboundInterface: "port12",
   DvcOutboundInterface: "port11",
   SrcNatIpAddr: 10.1.100.11,
@@ -742,14 +744,8 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      srcuuid: "48420c8a-5c88-51e9-0424-a37f9e74621e",
-      dstuuid: "187d6f46-5c86-51e9-70a0-fadcfc349c3e",
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appid: 15893,
       appcat: "Web.Client",
-      apprisk: "medium",
-      applist: "g-default",
       wanin: 313,
       wanout: 92,
       lanin: 92,
@@ -757,9 +753,7 @@
       countav: 1,
       countapp: 1,
       craction: 2,
-      mastersrcmac: "a2:e9:00:ec:40:01",
       srcserver: 0,
-      utmref: "65497-770",
     },
   },
 }
@@ -798,10 +792,8 @@
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/0000000000000000",
       assignip: null,
-      init: "local",
       mode: "main",
       stage: 1,
-      role: "initiator",
     },
   },
 }
@@ -937,9 +929,14 @@
   SrcHostname: null,
   SrcPortNumber: 44258,
   SrcMacAddr: "a2:e9:00:ec:40:01",
+  SrcDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  SrcDvcIdType: "Other",
   DstIpAddr: 185.244.31.158,
   DstHostname: null,
   DstPortNumber: 80,
+  DstDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  DstDvcIdType: "Other",
+  DstGeoCountry: "Germany",
   DvcInboundInterface: "port12",
   DvcOutboundInterface: "port11",
   SrcNatIpAddr: 10.1.100.11,
@@ -966,16 +963,10 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      srcuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstcountry: "Germany",
-      srccountry: "Reserved",
       appcat: "unscanned",
       countweb: 1,
       craction: 4194304,
-      mastersrcmac: "a2:e9:00:ec:40:01",
       srcserver: 0,
-      utmref: "65497-796",
     },
   },
 }
@@ -1196,9 +1187,13 @@
   SrcHostname: null,
   SrcPortNumber: 50002,
   SrcMacAddr: "a2:e9:00:ec:40:41",
+  SrcDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  SrcDvcIdType: "Other",
   DstIpAddr: 172.16.100.100,
   DstHostname: null,
   DstPortNumber: 53,
+  DstDvcId: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
+  DstDvcIdType: "Other",
   DvcInboundInterface: "port12",
   DvcOutboundInterface: "port11",
   SrcNatIpAddr: 10.1.100.22,
@@ -1224,15 +1219,9 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      srcuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstuuid: "ae28f494-5735-51e9-f247-d1d2ce663f4b",
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appcat: "unscanned",
       countdns: 1,
-      mastersrcmac: "a2:e9:00:ec:40:41",
       srcserver: 0,
-      utmref: "65495-306",
     },
   },
 }
@@ -1282,11 +1271,8 @@
     ocsf_unmapped: {
       srcintfrole: null,
       dstintfrole: null,
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appcat: "unscanned",
       countssh: 1,
-      utmref: "65535-0",
     },
   },
 }
@@ -1371,7 +1357,6 @@
     ocsf_firewall_rule_uid: "1",
     ocsf_unmapped: {
       direction: "incoming",
-      filtername: 1,
       filetype: "msoffice",
     },
   },
@@ -1430,6 +1415,7 @@
   DstHostname: null,
   DstPortNumber: 443,
   DstZone: "wan",
+  DstGeoCountry: "United States",
   DvcInboundInterface: "port10",
   DvcOutboundInterface: "port9",
   SrcNatIpAddr: 10.1.100.22,
@@ -1452,8 +1438,6 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      dstcountry: "United States",
-      srccountry: "Reserved",
       appcat: "unscanned",
       wanin: 43936,
       wanout: 710,
@@ -1461,11 +1445,8 @@
       lanout: 753,
       countdlp: 1,
       craction: 262144,
-      devtype: "Unknown",
       devcategory: "None",
-      mastersrcmac: "00:0c:29:51:38:5e",
       srcserver: 0,
-      utmref: "0-152",
     },
   },
 }
@@ -1517,16 +1498,11 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
       appcat: "unscanned",
       countips: 1,
       craction: 4096,
-      devtype: "Unknown",
       devcategory: "None",
-      mastersrcmac: "00:0c:29:51:38:5e",
       srcserver: 0,
-      utmref: "0-302",
     },
   },
 }
@@ -1586,6 +1562,7 @@
   DstHostname: null,
   DstPortNumber: 443,
   DstZone: "wan",
+  DstGeoCountry: "France",
   DvcInboundInterface: "port10",
   DvcOutboundInterface: "port9",
   SrcNatIpAddr: 10.1.100.22,
@@ -1605,19 +1582,12 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      dstcountry: "France",
-      srccountry: "Reserved",
       appid: 16072,
       appcat: "Video/Audio",
-      apprisk: "elevated",
-      applist: "block-social.media",
       appact: "drop-session",
       countapp: 3,
-      devtype: "Unknown",
       devcategory: "None",
-      mastersrcmac: "00:0c:29:51:38:5e",
       srcserver: 0,
-      utmref: "0-330",
     },
   },
 }
@@ -1660,15 +1630,16 @@
   AdditionalFields: {
     ocsf_app_name: "HTTPS.BROWSER",
     ocsf_firewall_rule_uid: "1",
+    ocsf_tls: {
+      certificate: {
+        issuer: "DigiCert SHA2 High Assurance Server CA",
+        subject: "*.dailymotion.com",
+      },
+    },
     ocsf_unmapped: {
       appid: 40568,
       direction: "outgoing",
       appcat: "Web.Client",
-      incidentserialno: 1962906680,
-      url: "/",
-      apprisk: "medium",
-      scertcname: "*.dailymotion.com",
-      scertissuer: "DigiCert SHA2 High Assurance Server CA",
     },
   },
 }
@@ -1715,9 +1686,6 @@
       appid: 16072,
       direction: "incoming",
       appcat: "Video/Audio",
-      incidentserialno: 1962906681,
-      url: "/",
-      apprisk: "elevated",
     },
   },
 }
@@ -1764,9 +1732,6 @@
       appid: 16072,
       direction: "incoming",
       appcat: "Video/Audio",
-      incidentserialno: 1962906682,
-      url: "/",
-      apprisk: "elevated",
     },
   },
 }
@@ -1792,6 +1757,7 @@
   SrcHostname: null,
   SrcPortNumber: 51844,
   SrcZone: "wan",
+  SrcGeoCountry: "United States",
   DstIpAddr: 10.1.100.20,
   DstHostname: null,
   DstPortNumber: 443,
@@ -1815,10 +1781,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "b3421bde-7763-51e9-8f6a-4a2b98d1e5c7",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      dstcountry: "Reserved",
-      srccountry: "United States",
-    },
   },
 }
 {
@@ -1842,10 +1804,12 @@
   SrcHostname: null,
   SrcPortNumber: 39914,
   SrcZone: "wan",
+  SrcGeoCountry: "United States",
   DstIpAddr: 192.0.2.88,
   DstHostname: null,
   DstPortNumber: 53,
   DstZone: "wan",
+  DstGeoCountry: "United States",
   DvcInboundInterface: "wan1",
   DvcOutboundInterface: "wan2",
   NetworkSessionId: "9014",
@@ -1863,10 +1827,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "e91b04c6-7763-51e9-b2d7-1f8c30ae5d42",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      dstcountry: "United States",
-      srccountry: "United States",
-    },
   },
 }
 {
@@ -1895,6 +1855,7 @@
   DstHostname: null,
   DstPortNumber: 443,
   DstZone: "wan",
+  DstGeoCountry: "United States",
   DvcInboundInterface: "dmz",
   DvcOutboundInterface: "wan1",
   SrcNatIpAddr: 10.1.100.66,
@@ -1917,8 +1878,6 @@
     ocsf_firewall_rule_uid: "a17c0a38-75c6-51e9-4c0d-d547347b63e5",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      dstcountry: "United States",
-      srccountry: "Reserved",
       appcat: "unscanned",
       wanin: 1779,
       wanout: 350,
@@ -1926,7 +1885,6 @@
       lanout: 754,
       countssl: 1,
       craction: 262144,
-      utmref: "65467-0",
     },
   },
 }
@@ -1973,10 +1931,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "c47f21aa-7763-51e9-9c15-6b1de4a72f30",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      dstcountry: "Reserved",
-      srccountry: "Reserved",
-    },
   },
 }
 {
@@ -2017,7 +1971,6 @@
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/aabbccddeeff0011",
       assignip: null,
-      tunnelip: 10.10.10.1,
       nextstat: 600,
     },
   },
@@ -2078,7 +2031,8 @@
   SrcPortNumber: null,
   SrcGeoCountry: "United States",
   DstIpAddr: null,
-  DstHostname: null,
+  DstHostname: "10.212.134.200",
+  DstFQDN: "10.212.134.200",
   DstPortNumber: null,
   NetworkSessionId: "1234567890",
   NetworkDirection: "NA",
@@ -2089,7 +2043,6 @@
   SrcUsernameType: "Simple",
   AdditionalFields: {
     ocsf_unmapped: {
-      dst_host: 10.212.134.200,
       reason: null,
     },
   },
@@ -2130,9 +2083,6 @@
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/aabbccddeeff0011",
       assignip: null,
-      phase2_name: "branch-office-p2",
-      init: "remote",
-      role: "responder",
     },
   },
   SrcUsername: "vpnadmin",
@@ -2161,7 +2111,8 @@
   SrcPortNumber: null,
   SrcGeoCountry: "United States",
   DstIpAddr: null,
-  DstHostname: null,
+  DstHostname: "10.212.134.200",
+  DstFQDN: "10.212.134.200",
   DstPortNumber: null,
   NetworkSessionId: "1234567890",
   NetworkDirection: "NA",
@@ -2173,7 +2124,6 @@
   SrcUsernameType: "Simple",
   AdditionalFields: {
     ocsf_unmapped: {
-      dst_host: 10.212.134.200,
       nextstat: 600,
     },
   },
@@ -2214,7 +2164,7 @@
   EventMessage: "Add user.local jdoe",
   EventSeverity: "Informational",
   EventResult: "NA",
-  EventOriginalResultDetails: "Object attribute configured",
+  EventOriginalResultDetails: "type[password]",
   Dvc: "FortiGate",
   DvcAction: null,
   EventSchema: "UserManagement",

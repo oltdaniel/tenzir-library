@@ -18,15 +18,28 @@ $event.ocsf.is_alert = true
 
 drop $event.fortinet.eventtype
 
-// `virus` is the malware name; `virusid` is the signature ID;
-// `dtype` is the detection type (e.g. "Virus", "Botnet").
+// `virus` is the malware name; `virusid` is the signature ID; `dtype` is the
+// detection type FortiGuard assigned. OCSF classifies malware on its own enum,
+// so the FortiOS label is translated rather than passed through; anything
+// outside the known set becomes Unknown (0) instead of being forced to Virus.
+let $classifications = {
+  Virus: 19,
+  Botnet: 3,
+  Trojan: 17,
+  Worm: 20,
+  Adware: 1,
+  Spyware: 16,
+  Rootkit: 14,
+  Ransomware: 13,
+  Backdoor: 2,
+}
 $event.ocsf.malware = [{
   name: move $event.fortinet.virus,
   uid: (move $event.fortinet.virusid).string(),
-  // `dtype` maps to classification: "Virus" → 19.
-  classification_ids: [19],
+  classification_ids: [$classifications[$event.fortinet.dtype?]? else 0],
   provider: "FortiGate",
 }]
+drop $event.fortinet.dtype?
 
 $event.ocsf.finding_info = {
   uid: $event.ocsf.malware[0].uid,
@@ -37,6 +50,21 @@ $event.ocsf.finding_info = {
     name: $event.ocsf.malware[0].name,
   },
 }
+
+// `quarskip` states whether the infected file was quarantined and, when it was
+// not, why. That is the outcome of the response FortiGate took, which is what
+// `remediation.desc` records.
+if $event.fortinet.quarskip? != null {
+  $event.ocsf.remediation = {
+    desc: move $event.fortinet.quarskip,
+  }
+}
+
+// `analyticssubmit` is a boolean saying whether the sample was uploaded to
+// FortiSandbox for further analysis. It describes the vendor's own downstream
+// workflow rather than anything about the detection, and OCSF has no slot for
+// that, so it stays in `unmapped`. The resulting checksum is mapped as a file
+// hash by the evidence UDO below.
 
 // Network context goes into evidences for Detection Finding.
 fortinet::fortigate::ocsf::network_evidence event=$event

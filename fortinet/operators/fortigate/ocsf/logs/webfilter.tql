@@ -31,6 +31,24 @@ $event.ocsf.http_request = {
   },
 }
 
+// Deliberately left in `unmapped`:
+//
+// - `cat` and `catdesc` are the FortiGuard site category, as an ID and its
+//   name. Both `url.category_ids` and `url.categories` are backed by a single
+//   OCSF enum drawn from a different taxonomy, so neither half of the FortiOS
+//   pair can be carried across as-is: FortiGuard 26 is "Malicious Websites"
+//   while OCSF 26 is "Child Pornography", and the name fails enum validation
+//   outright. Translating the ~90 FortiGuard categories onto the OCSF enum
+//   needs a lookup that does not exist yet, so the pair is preserved verbatim
+//   in `unmapped` instead of being asserted as something it is not.
+// - `method` is not an HTTP verb despite the name. FortiOS reports how the web
+//   filter matched here ("domain", "url", "pattern"), so `http_method` would
+//   misrepresent it as a request method the device never observed.
+// - `reqtype` ("direct" or "referral") says whether the user navigated to the
+//   site directly or followed a link. OCSF models the referrer as a URL in
+//   `http_request.referrer`, not as a navigation kind, and FortiOS does not log
+//   the referring URL itself.
+
 $event.ocsf.traffic = {
   bytes_in: move $event.fortinet.rcvdbyte,
   bytes_out: move $event.fortinet.sentbyte,

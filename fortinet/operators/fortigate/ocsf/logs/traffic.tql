@@ -29,7 +29,6 @@ $event.ocsf.src_endpoint = {
   ip: move $event.fortinet.srcip,
   port: move $event.fortinet.srcport,
   interface_name: move $event.fortinet.srcintf,
-  mac: move $event.fortinet.srcmac?,
 }
 if $event.fortinet.srcname? != null {
   $event.ocsf.src_endpoint.name = move $event.fortinet.srcname
@@ -59,6 +58,11 @@ if $event.fortinet.srcintfrole? != null {
 if $event.fortinet.dstintfrole? != null {
   $event.ocsf.dst_endpoint.zone = move $event.fortinet.dstintfrole
 }
+
+// Geo location, address-object UUIDs, originator MAC, and device fingerprint.
+// Traffic logs build their endpoints inline rather than through
+// `network_endpoints`, so the shared context is applied explicitly here.
+fortinet::fortigate::ocsf::endpoint_context event=$event
 
 // Derives the session direction from those zones.
 fortinet::fortigate::ocsf::connection_info event=$event
@@ -102,6 +106,23 @@ drop $event.fortinet.transport?
 // `app` is the application identified by deep packet inspection.
 if $event.fortinet.app? != null {
   $event.ocsf.app_name = move $event.fortinet.app
+}
+
+// `sentdelta`/`rcvddelta` count the bytes transferred since the previous log
+// entry for this session, which FortiOS emits for long-lived sessions. They
+// describe one observation interval, so they belong in `traffic` next to the
+// lifetime totals already recorded in `cumulative_traffic` above.
+if $event.fortinet.sentdelta? != null or $event.fortinet.rcvddelta? != null {
+  $event.ocsf.traffic = {
+    bytes_in: move $event.fortinet.rcvddelta?,
+    bytes_out: move $event.fortinet.sentdelta?,
+  }
+}
+
+// `utmref` links this session summary to the UTM log records raised for the
+// same session, in a `<serial>-<id>` form shared by both sides.
+if $event.fortinet.utmref? != null {
+  $event.ocsf.metadata.correlation_uid = (move $event.fortinet.utmref).string()
 }
 
 // `osname` is the source device OS as fingerprinted by FortiGate.
@@ -153,5 +174,15 @@ if $event.fortinet.utmaction? != null {
 drop $event.fortinet.action?
 drop $event.fortinet.utmaction?
 
-// `crscore`/`crlevel` are the composite UTM risk score and level.
+// `applist` is the application-control profile that inspected the session.
+// The firewall policy itself is already recorded as `firewall_rule` above, so
+// `policy` is free to carry the security profile that acted on the traffic.
+if $event.fortinet.applist? != null {
+  $event.ocsf.policy = {
+    name: move $event.fortinet.applist,
+  }
+}
+
+// `crscore`/`crlevel` are the composite UTM risk score and level, and
+// `apprisk` the application-control rating for `app`.
 fortinet::fortigate::ocsf::risk event=$event

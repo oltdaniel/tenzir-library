@@ -1,11 +1,55 @@
 ---
+description: >-
+  Fall back to the OCSF Base Event (class 0) for FortiGate records that no
+  OCSF event class describes.
 args:
   named:
     - name: event
       description: The field that holds the event to map.
       type: field
 ---
-  $event.ocsf.activity_id = 0
-  $event.ocsf.category_uid = 0
-  $event.ocsf.class_uid = 0
-  $event.ocsf.type_uid = 0
+
+// FortiGate emits a large family of device-health and infrastructure records
+// that report on the appliance itself rather than on activity passing through
+// it. OCSF has no event class for appliance telemetry, so forcing them into a
+// security class would misfile them; they stay Base Event, keep everything the
+// device reported in `unmapped`, and reach Sentinel through the
+// CommonSecurityLog fallback rather than an ASIM schema.
+//
+// The families that land here, and what each carries:
+//
+// - `subtype=ha`: HA cluster state transitions. `ha_role`, `ha_group`,
+//   `vcluster`, `vcluster_member`, and `vcluster_state` describe cluster
+//   membership, and `hostname` names the member. OCSF models neither clusters
+//   nor failover.
+// - `subtype=fortiextender`: LTE/5G modem telemetry from an attached
+//   FortiExtender. `imei`, `imsi`, `iccid`, `carrier`, `plan`, and
+//   `phonenumber` identify the subscriber and its plan; `rsrp`, `rsrq`, `rssi`,
+//   `sinr`, `signalstrength`, and `temperature` are radio and hardware
+//   readings. These are cellular measurements, not security observations.
+// - `subtype=wireless`: access-point and station telemetry. `channel`,
+//   `radioband`, `signal`, `noise`, `rate`, `stacount`, `apstatus`, `aptype`,
+//   and the `radioid*` pair are radio measurements; `security`, `encryption`,
+//   and `manuf` describe the WLAN and the station's vendor.
+// - `subtype=connector`: SDN connector discovery. `cfgobj`, `addr`,
+//   `cldobjid`, and `netid` name the cloud object, address, and network that
+//   the connector learned. These are inventory updates from a cloud provider
+//   rather than a change an administrator made, so Entity Management would
+//   misattribute them to an actor that does not exist.
+// - `subtype=endpoint`: FortiClient registration counts. `count`,
+//   `license_limit`, and `used_for_type` report licence consumption rather
+//   than a number of events, so the OCSF `count` attribute would mean
+//   something else.
+// - `subtype=wad`: WAD records other than the SSL alerts handled elsewhere.
+//   `alert` is the numeric TLS alert code, which OCSF's TLS object does not
+//   carry.
+//
+// `sn` appears across several of these and is deliberately never mapped to
+// `device.hw_info.serial_number`: FortiOS overloads it. On HA logs it is the
+// hardware serial of a cluster member ("FG2K5E3916900348"), while on
+// `subtype=system` logs it is a log sequence number ("1557771654"). Nothing in
+// the record says which, so binding it to a serial would misattribute it.
+$event.ocsf.activity_id = 0
+$event.ocsf.category_uid = 0
+$event.ocsf.class_uid = 0
+$event.ocsf.type_uid = 0

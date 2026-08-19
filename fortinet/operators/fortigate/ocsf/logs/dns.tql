@@ -20,8 +20,8 @@ $event.ocsf.class_uid = 4003
 $event.ocsf.activity_id = $activities[move $event.fortinet.eventtype]? else 0
 $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 
+// `srcmac` is picked up by the shared endpoint context inside this UDO.
 fortinet::fortigate::ocsf::network_endpoints event=$event
-$event.ocsf.src_endpoint.mac = move $event.fortinet.srcmac
 
 fortinet::fortigate::ocsf::connection_info event=$event
 

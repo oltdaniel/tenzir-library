@@ -22,13 +22,27 @@ fortinet::fortigate::ocsf::network_endpoints event=$event
 fortinet::fortigate::ocsf::connection_info event=$event
 
 // `filename` and `filesize` describe the file being transferred.
-// `filetype` stays in unmapped: type_name requires type_id sibling.
+//
+// `filetype` stays in `unmapped`: FortiOS reports a file *format* there
+// ("msoffice", "pdf"), while OCSF's `file.type_id` enumerates file *kinds*
+// (regular file, folder, symbolic link). Writing the format into that field
+// would assert something the enum does not mean.
 $event.ocsf.file = {
   name: move $event.fortinet.filename,
   size: move $event.fortinet.filesize,
 }
 
 fortinet::fortigate::ocsf::security_control event=$event
+
+// `filtername` is the file-filter entry inside the CIFS profile that matched.
+// `security_control` above has already put the profile itself in `policy.name`,
+// so the matched entry is recorded as the rule beneath it.
+if $event.fortinet.filtername? != null {
+  $event.ocsf.firewall_rule = {
+    ...$event.ocsf.firewall_rule?,
+    name: (move $event.fortinet.filtername).string(),
+  }
+}
 
 if $event.fortinet.action? != null {
   $event.ocsf.disposition_id = fortinet::$utm_dispositions[move $event.fortinet.action]? else 0
