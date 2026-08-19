@@ -1,19 +1,34 @@
 ---
 description: >-
-  Enrich an in-progress OCSF event with context from the RFC 5424 syslog
-  frame produced by read_syslog. Call this after
-  fortinet::fortigate::ocsf::map and before deriving or casting.
+  Enrich an in-progress OCSF event with context from the syslog frame that
+  carried it: hostname → logger.device.hostname, timestamp → logger.logged_time,
+  app_name → logger.name.
 
-  Populates metadata.loggers with the syslog sender: hostname →
-  logger.device.hostname, timestamp → logger.logged_time, app_name →
-  logger.name.
+  Call this after fortinet::fortigate::ocsf::map, while the fields that
+  parse_syslog produced are still at the top level of the event and the OCSF
+  record still lives in its own field. Calling it after the OCSF record has
+  replaced `this` finds none of those fields.
+args:
+  named:
+    - name: event
+      description: The field that holds the in-progress OCSF event.
+      type: field
 ---
 
-ocsf.metadata.loggers = [{
+// The syslog fields sit at the top level of the event, alongside rather than
+// inside the OCSF record this writes to, so they are read unqualified.
+//
+// `timestamp` is when the relay stamped the frame. RFC 5424 states it in full
+// and `parse_syslog` returns a time. The older BSD format gives only a month,
+// day, and clock reading with no year, which arrives as a string; `time` turns
+// that into null rather than inventing a year, and warns once per pipeline so
+// the omission is visible. The event's own `time` is unaffected either way,
+// since it comes from FortiGate's `eventtime` rather than from the frame.
+$event.metadata.loggers = [{
   device: {
-    hostname: hostname,
+    hostname: hostname?,
   },
-  logged_time: timestamp,
-  name: app_name,
+  logged_time: (timestamp? else null).time(),
+  name: app_name?,
   log_format: "syslog",
 }]

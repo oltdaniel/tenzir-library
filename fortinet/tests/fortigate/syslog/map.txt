@@ -1,0 +1,54 @@
+warning: `time` failed to parse string
+  --> operators/fortigate/ocsf/syslog.tql:31:17
+   |
+31 |   logged_time: (timestamp? else null).time(),
+   |                 ~~~~~~~~~~~~~~~~~~~~
+   |
+  --> tests/fortigate/syslog/map.tql:16:1
+   |
+16 | fortinet::fortigate::ocsf::syslog event=fortinet
+   | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ called from here
+   |
+   = note: tried to convert: May 13 16:29:45
+{
+  class_uid: 4001,
+  time: 2019-05-10T18:37:47.369913239Z,
+  loggers: [
+    {
+      device: {
+        hostname: "FGT-EDGE-01",
+      },
+      log_format: "syslog",
+      logged_time: 2025-08-07T16:46:13Z,
+      name: "FortiGate",
+    },
+  ],
+}
+{
+  class_uid: 4001,
+  time: 2019-05-10T18:37:47.369913239Z,
+  loggers: [
+    {
+      device: {
+        hostname: "FGT-EDGE-01",
+      },
+      log_format: "syslog",
+      logged_time: null,
+      name: null,
+    },
+  ],
+}
+{
+  class_uid: 4002,
+  time: 2019-05-13T23:29:44.975119738Z,
+  loggers: [
+    {
+      device: {
+        hostname: "FGT-EDGE-01",
+      },
+      log_format: "syslog",
+      logged_time: null,
+      name: null,
+    },
+  ],
+}

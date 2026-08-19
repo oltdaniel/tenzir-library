@@ -15,9 +15,11 @@ unordered {
   fortinet = content.parse_kv()
 }
 fortinet::fortigate::ocsf::map event=fortinet
+// Record the syslog sender while `parse_syslog`'s fields are still at the top
+// level; the assignment below replaces the event with the OCSF record.
+fortinet::fortigate::ocsf::syslog event=fortinet
 fortinet.raw_data = move content
 fortinet.raw_data_size = fortinet.raw_data.length_bytes()
 this = fortinet
-fortinet::fortigate::ocsf::syslog
 ocsf::derive
 publish "ocsf"

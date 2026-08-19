@@ -1,0 +1,25 @@
+// Covers the syslog ingestion path from `examples/map-to-ocsf.tql`: the frame
+// fields must reach `metadata.loggers`, which requires the enrichment to run
+// while they are still at the top level of the event.
+from_file f"{env("TENZIR_INPUTS")}/*.txt" {
+  read_lines
+}
+this = line.parse_syslog()
+// BSD frames carry the payload in `content` and RFC 5424 frames in `message`.
+// FortiGate defaults to the BSD format, which is what the example assumes, but
+// both are covered here because they differ in whether the frame states a year
+// and therefore in whether `logged_time` can be populated.
+unordered {
+  fortinet = (content? else message).parse_kv()
+}
+fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::syslog event=fortinet
+this = fortinet
+ocsf::derive
+ocsf::cast
+this = {
+  class_uid: class_uid,
+  time: time,
+  loggers: metadata.loggers,
+}
+sort

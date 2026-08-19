@@ -1,0 +1,4 @@
+# The syslog enrichment reads the frame fields that `parse_syslog` leaves at the
+# top level, so this test needs syslog-framed inputs rather than the bare
+# key-value lines the other FortiGate tests use.
+inputs: ./inputs
