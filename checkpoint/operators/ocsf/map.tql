@@ -41,7 +41,7 @@ $event.ocsf.metadata = {
   version: "1.8.0",
 }
 if $event.checkpoint.product? != null {
-  $event.ocsf.metadata.product.name = move $event.checkpoint.product
+  $event.ocsf.metadata.product.name = (move $event.checkpoint.product).string()
 }
 if $event.checkpoint.loguid? != null {
   $event.ocsf.metadata.uid = move $event.checkpoint.loguid

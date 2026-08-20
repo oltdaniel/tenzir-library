@@ -27,7 +27,9 @@ if $event.umbrella.internal_ip? != null {
 $event.ocsf.dst_endpoint.name = "Cisco Umbrella DNS"
 
 if $event.umbrella.domain? != null {
-  $event.ocsf.query.hostname = move $event.umbrella.domain
+  // A query for a literal address parses as an `ip`, and `ocsf::cast` drops a
+  // mistyped value rather than converting it.
+  $event.ocsf.query.hostname = (move $event.umbrella.domain).string()
 }
 if $event.umbrella.query_type? != null {
   $event.query_type = $event.umbrella.query_type.parse_grok(r"%{NUMBER:value} \(%{WORD:name}\)")

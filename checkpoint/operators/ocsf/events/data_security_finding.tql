@@ -40,7 +40,7 @@ if $event.checkpoint.policy? != null {
 }
 
 if $event.checkpoint.object? != null {
-  $event.ocsf.file.name = move $event.checkpoint.object
+  $event.ocsf.file.name = (move $event.checkpoint.object).string()
   $event.ocsf.file.type_id = 1
 }
 if $event.checkpoint.objecttype? != null {
@@ -61,7 +61,7 @@ if $event.checkpoint.service? != null {
   $event.ocsf.dst_endpoint.port = move $event.checkpoint.service
 }
 if $event.checkpoint.user? != null {
-  $event.ocsf.actor.user.name = move $event.checkpoint.user
+  $event.ocsf.actor.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.sender? != null {
   $event.ocsf.actor.user.email_addr = move $event.checkpoint.sender

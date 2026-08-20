@@ -30,14 +30,14 @@ drop $event.checkpoint.action?
 checkpoint::ocsf::status event=$event
 
 if $event.checkpoint.user? != null {
-  $event.ocsf.actor.user.name = move $event.checkpoint.user
+  $event.ocsf.actor.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.src? != null {
   $event.ocsf.src_endpoint.ip = move $event.checkpoint.src
 }
 if $event.checkpoint.object? != null or $event.checkpoint.objecttype? != null {
   $event.ocsf.resources = [{
-    name: move $event.checkpoint.object?,
+    name: (move $event.checkpoint.object?).string(),
     type: move $event.checkpoint.objecttype?,
   }]
 }

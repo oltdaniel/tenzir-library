@@ -1,0 +1,14 @@
+{
+  class_uid: 4001,
+  product: "Firewall",
+  src_hostname: null,
+  dst_hostname: null,
+  user: null,
+}
+{
+  class_uid: 6004,
+  product: "URL Filtering",
+  src_hostname: "192.168.14.10",
+  dst_hostname: null,
+  user: "12345",
+}

@@ -39,7 +39,13 @@ $event.ocsf.severity_id = $severities[move $event.zia.threatseverity]? else 0
 
 // --- OCSF: context attributes -----------------
 
-$event.ocsf.app_name = move $event.zia.appname
+// `zscaler::read_kv` infers a type per value, so a quoted field whose text
+// happens to look like a number or an address arrives as an `int64` or an
+// `ip` — a numeric location code, a department ID, a bare-address Host
+// header. `ocsf::cast` drops such a value rather than coercing it, so every
+// free-form name below is made a string here.
+
+$event.ocsf.app_name = (move $event.zia.appname).string()
 
 $event.ocsf.metadata.profiles = ["host", "network_proxy", "security_control"]
 
@@ -70,7 +76,7 @@ $event.ocsf.src_endpoint = {
 // Destination Endpoint (The web server)
 $event.ocsf.dst_endpoint = {
   ip: ip(move $event.zia.serverip),
-  domain: move $event.zia.hostname,
+  domain: (move $event.zia.hostname).string(),
 }
 
 $event.ocsf.traffic = {
@@ -100,18 +106,18 @@ $event.ocsf.http_response = {
 
 $event.ocsf.actor = {
   user: {
-    name: move $event.zia.user,
+    name: (move $event.zia.user).string(),
     org: {
       // ou: org unit
-      ou_name: move $event.zia.department?,
+      ou_name: (move $event.zia.department?).string(),
     },
   },
 }
 
 $event.ocsf.device = {
-  hostname: move $event.zia.devicehostname?,
+  hostname: (move $event.zia.devicehostname?).string(),
   owner: {
-    name: move $event.zia.deviceowner?,
+    name: (move $event.zia.deviceowner?).string(),
   },
 }
 
@@ -120,7 +126,7 @@ $event.ocsf.device = {
 // The ZIA node
 $event.ocsf.proxy_endpoint = {
   ip: ip(move $event.zia.clientpublicIP),
-  name: move $event.zia.location
+  name: (move $event.zia.location).string()
 }
 
 // --- OCSF: Security Control profile -----------
@@ -137,7 +143,7 @@ drop $event.zia.action
 if $event.zia.threatname != null {
   $event.ocsf.malware = [{
     classification_ids: [0],
-    name: move $event.zia.threatname,
+    name: (move $event.zia.threatname).string(),
   }]
 }
 

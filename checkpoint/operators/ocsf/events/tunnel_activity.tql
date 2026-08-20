@@ -41,7 +41,7 @@ if $event.checkpoint.service? != null {
   $event.ocsf.dst_endpoint.port = move $event.checkpoint.service
 }
 if $event.checkpoint.user? != null {
-  $event.ocsf.user.name = move $event.checkpoint.user
+  $event.ocsf.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.session? != null {
   $event.ocsf.session.uid = move $event.checkpoint.session

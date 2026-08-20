@@ -1,0 +1,20 @@
+// Covers the pipe-KV syslog path from `examples/kv-message-syslog-to-ocsf.tql`.
+// Unlike the JSON export, `parse_kv` infers a type per value, so a login name
+// that is all digits or an `sname` that is a bare address reaches the mappers
+// as an `int64` or an `ip`. `ocsf::cast` drops a mistyped value rather than
+// converting it, so this asserts those fields survive the round trip.
+from_file f"{env("TENZIR_INPUTS")}/checkpoint-syslog-kv-message.log" {
+  read_syslog
+}
+checkpoint::syslog::parse_kv_message
+checkpoint::ocsf::map
+ocsf::derive
+ocsf::cast
+this = {
+  class_uid: class_uid,
+  product: metadata.product.name,
+  src_hostname: src_endpoint?.hostname?,
+  dst_hostname: dst_endpoint?.hostname?,
+  user: actor?.user?.name?,
+}
+sort

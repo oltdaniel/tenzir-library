@@ -2,6 +2,12 @@
 description: Extract Check Point fields from a read_syslog message field
 ---
 
+// `parse_kv` infers a type per value, so a Check Point field whose text looks
+// like a number or an address arrives as an `int64` or an `ip` rather than a
+// string — a numeric login name, an `sname` that is a bare address. The OCSF
+// mappers coerce those back, because `ocsf::cast` drops a mistyped value
+// rather than converting it. The JSON export path is unaffected, since JSON
+// states the type.
 this = {
   ...message.parse_kv(field_split="\\|", value_split="="),
   syslog: {

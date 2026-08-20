@@ -57,10 +57,10 @@ if $event.checkpoint.s_port? != null {
   $event.ocsf.src_endpoint.port = move $event.checkpoint.s_port
 }
 if $event.checkpoint.sname? != null {
-  $event.ocsf.src_endpoint.hostname = move $event.checkpoint.sname
+  $event.ocsf.src_endpoint.hostname = (move $event.checkpoint.sname).string()
 }
 if $event.checkpoint.user? != null {
-  $event.ocsf.actor.user.name = move $event.checkpoint.user
+  $event.ocsf.actor.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.reason? != null {
   $event.ocsf.status_detail = move $event.checkpoint.reason

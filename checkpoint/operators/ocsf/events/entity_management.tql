@@ -29,14 +29,14 @@ drop $event.checkpoint.action?
 checkpoint::ocsf::status event=$event
 
 if $event.checkpoint.user? != null {
-  $event.ocsf.actor.user.name = move $event.checkpoint.user
+  $event.ocsf.actor.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.src? != null {
   $event.ocsf.src_endpoint.ip = move $event.checkpoint.src
 }
 
 $event.ocsf.entity = {
-  name: move $event.checkpoint.object?,
+  name: (move $event.checkpoint.object?).string(),
 }
 if $event.checkpoint.objecttype?.to_lower().contains("rule") or
    $event.checkpoint.objecttype?.to_lower().contains("policy") {

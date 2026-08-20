@@ -54,7 +54,7 @@ if $event.checkpoint.s_port? != null {
   $event.ocsf.src_endpoint.port = move $event.checkpoint.s_port
 }
 if $event.checkpoint.sname? != null {
-  $event.ocsf.src_endpoint.hostname = move $event.checkpoint.sname
+  $event.ocsf.src_endpoint.hostname = (move $event.checkpoint.sname).string()
 }
 if $event.checkpoint.inzone? != null {
   $event.ocsf.src_endpoint.zone = move $event.checkpoint.inzone
@@ -69,7 +69,7 @@ if $event.checkpoint.service_id? != null {
   $event.ocsf.dst_endpoint.svc_name = move $event.checkpoint.service_id
 }
 if $event.checkpoint.dname? != null {
-  $event.ocsf.dst_endpoint.hostname = move $event.checkpoint.dname
+  $event.ocsf.dst_endpoint.hostname = (move $event.checkpoint.dname).string()
 }
 if $event.checkpoint.dst_domain_name? != null {
   $event.ocsf.dst_endpoint.domain = move $event.checkpoint.dst_domain_name
@@ -92,10 +92,10 @@ if $event.checkpoint.dnatport? != null {
 }
 
 if $event.checkpoint.user? != null {
-  $event.ocsf.actor.user.name = move $event.checkpoint.user
+  $event.ocsf.actor.user.name = (move $event.checkpoint.user).string()
 }
 if $event.checkpoint.app_name? != null {
-  $event.ocsf.app_name = move $event.checkpoint.app_name
+  $event.ocsf.app_name = (move $event.checkpoint.app_name).string()
 }
 
 if $event.checkpoint.rule_name? != null or $event.checkpoint.rule_uid? != null {

@@ -307,3 +307,106 @@
     keyprotectiontype: "Software Protection",
   },
 }
+{
+  action: "Allowed",
+  action_id: 1,
+  activity_id: 3,
+  activity_name: "Get",
+  actor: {
+    user: {
+      name: "12345",
+      org: {
+        ou_name: "42",
+      },
+    },
+  },
+  app_name: "Google Maps",
+  category_name: "Network Activity",
+  category_uid: 4,
+  class_name: "HTTP Activity",
+  class_uid: 4002,
+  device: {
+    hostname: "10.20.30.40",
+    owner: {
+      name: "998877",
+    },
+  },
+  dst_endpoint: {
+    domain: "10.20.30.41",
+    ip: 5.6.7.8,
+  },
+  http_request: {
+    http_method: "GET",
+    referrer: "www.google.com/maps/_/js/k=maps.w.en.l7lhxeyvqh4.2021.o...",
+    url: {
+      categories: [
+        "Web Search",
+        "Information Technology",
+        "System and Development",
+        "Business Use",
+      ],
+      category_ids: [
+        99,
+        99,
+        99,
+        99,
+      ],
+      scheme: "https",
+      url_string: "www.google.com/maps/vt/...",
+    },
+    user_agent: "\"\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36\"\"",
+  },
+  http_response: {
+    code: 200,
+    content_type: "Other",
+  },
+  metadata: {
+    log_name: "NSS",
+    original_event_uid: "7529859230052384799",
+    product: {
+      name: "NSS",
+      vendor_name: "Zscaler",
+    },
+    profiles: [
+      "host",
+      "network_proxy",
+      "security_control",
+    ],
+    version: "1.8.0",
+  },
+  proxy_endpoint: {
+    ip: 1.2.3.4,
+    name: "4711",
+  },
+  risk_score: 0,
+  severity: "Unknown",
+  severity_id: 0,
+  src_endpoint: {
+    ip: 10.0.0.42,
+  },
+  status: "Success",
+  status_code: "200",
+  status_detail: "Allowed",
+  status_id: 1,
+  time: 2025-07-22T10:59:31Z,
+  traffic: {
+    bytes: 7750,
+    bytes_in: 4685,
+    bytes_out: 3065,
+  },
+  type_name: "HTTP Activity: Get",
+  type_uid: 400203,
+  unmapped: {
+    threatcategory: null,
+    threatname: null,
+    filetype: "GZIP (gzip, gz)",
+    app_status: "Unsanctioned",
+    dlpengine: null,
+    threatclass: null,
+    dlpdictionaries: null,
+    fileclass: "Archive Files",
+    bwthrottle: false,
+    unscannabletype: null,
+    keyprotectiontype: "Software Protection",
+  },
+}
