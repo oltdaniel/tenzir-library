@@ -1,7 +1,9 @@
 // Package-wide constants shared across the FortiGate OCSF log mappers.
 
-// OCSF `status_id` for the FortiGate `status` field on event/* logs.
-let $statuses = {success: 1, failed: 2}
+// OCSF `status_id` for the FortiGate `status` field on event/* logs. FortiGate
+// spells the failure case two ways: `event/user` and `event/endpoint` say
+// "failed", while the IKE logs under `event/vpn` say "failure".
+let $statuses = {success: 1, failed: 2, failure: 2}
 
 // OCSF `disposition_id` for the UTM content-inspection logs (webfilter,
 // emailfilter, virus, cifs, ssh), whose `action` is one of allowed/blocked/

@@ -21,10 +21,12 @@ args:
 // catalogue, and `metadata.event_code` already holds `logid` as a string.
 $event.vpn_message_id = $event.ocsf.metadata.event_code.slice(begin=-5)
 
-// The VPN identity. IKE logs name it through XAuth or EAP instead of `user`
-// when extended authentication is in play; sentinel values are already null.
-$event.vpn_user = $event.fortinet.user? else $event.fortinet.xauthuser? else $event.fortinet.eapuser?
-$event.vpn_group = $event.fortinet.group? else $event.fortinet.xauthgroup? else $event.fortinet.eapauthgroup?
+// The VPN identity. IKE logs name it through XAuth or EAP when extended
+// authentication is in play, and then `user` holds the numeric IKE identity
+// rather than a login name, so the extended-authentication fields win.
+// Sentinel values are already null.
+$event.vpn_user = $event.fortinet.xauthuser? else $event.fortinet.eapuser? else $event.fortinet.user?
+$event.vpn_group = $event.fortinet.xauthgroup? else $event.fortinet.eapauthgroup? else $event.fortinet.group?
 drop $event.fortinet.user?
 drop $event.fortinet.xauthuser?
 drop $event.fortinet.eapuser?
@@ -32,10 +34,18 @@ drop $event.fortinet.group?
 drop $event.fortinet.xauthgroup?
 drop $event.fortinet.eapauthgroup?
 
-if $event.vpn_message_id == "39426" {
-  // SSL VPN login failure. The catalogue has no matching success message: a
-  // successful SSL-VPN login is reported as a tunnel-up event instead, which
-  // the tunnel branch below handles.
+// IKE has no dedicated message ID for a rejected login. Extended
+// authentication failures ride on the generic phase-1 negotiation message
+// (37121) and are told apart only by `result`, which names the mechanism that
+// rejected the login. Fortinet's own guidance for alerting on failed IPsec
+// logins is to filter that field, so this does the same.
+$event.vpn_auth_failure = ($event.fortinet.result? else "").ends_with("authentication failed", ignore_case=true)
+
+if $event.vpn_message_id == "39426" or $event.vpn_auth_failure {
+  // A rejected login. SSL-VPN reports it as its own message (39426); IPsec
+  // reports it on the phase-1 message caught above. Neither has a matching
+  // success message: a successful login of either kind is reported as a
+  // tunnel-up event instead, which the tunnel branch below handles.
   @name = "ocsf.authentication"
   $event.ocsf.category_uid = 3
   $event.ocsf.class_uid = 3002
@@ -44,14 +54,43 @@ if $event.vpn_message_id == "39426" {
   $event.ocsf.is_remote = true
   $event.ocsf.src_endpoint = {
     ip: move $event.fortinet.remip?,
+    port: move $event.fortinet.remport?,
   }
-  // `action` is always "ssl-login-fail" here, which the class and status above
-  // already say; consume it so it does not reappear as unmapped noise.
+  // IKE names the gateway side of the exchange too; SSL-VPN does not.
+  if $event.fortinet.locip? != null {
+    $event.ocsf.dst_endpoint = {
+      ip: move $event.fortinet.locip,
+      port: move $event.fortinet.locport?,
+      interface_name: move $event.fortinet.outintf?,
+    }
+  }
+  // The tunnel the client tried to bring up is what it authenticated against.
+  if $event.fortinet.vpntunnel? != null {
+    $event.ocsf.service = {
+      name: move $event.fortinet.vpntunnel,
+    }
+  }
+  // Name the mechanism that rejected the login. XAuth is not in the OCSF
+  // enum, so it is carried as Other with the name spelled out.
+  if ($event.fortinet.result? else "").starts_with("XAUTH", ignore_case=true) {
+    $event.ocsf.auth_protocol_id = 99  // Other
+    $event.ocsf.auth_protocol = "XAuth"
+  } else if ($event.fortinet.result? else "").starts_with("EAP", ignore_case=true) {
+    $event.ocsf.auth_protocol_id = 9  // EAP
+  }
+  // `action` is "ssl-login-fail" or "negotiate" here, both of which the class
+  // and status above already say; consume it so it does not reappear as
+  // unmapped noise.
   drop $event.fortinet.action?
-  // `tunnelid` and `tunneltype` are still present on a failed login, but the
-  // login failed, so no tunnel was established: `tunnelid` is 0 and the type
-  // only names the portal mode that was attempted. Recording either as a tunnel
-  // would assert a session that never existed, so both stay in `unmapped`.
+  // Left in `unmapped`:
+  //
+  // - `tunnelid` and `tunneltype` are still present on a failed login, but no
+  //   tunnel was established: `tunnelid` is 0 and the type only names the
+  //   portal mode that was attempted. Recording either as a tunnel would
+  //   assert a session that never existed.
+  // - `init`, `role`, `mode`, and `stage` describe an IKE exchange that never
+  //   completed. They do not orient the endpoints here, because the source is
+  //   the client whose login was rejected either way.
 } else {
   @name = "ocsf.tunnel_activity"
   $event.ocsf.category_uid = 4
@@ -193,13 +232,16 @@ drop $event.ocsf.local_endpoint?
 drop $event.ocsf.remote_endpoint?
 
 if $event.vpn_user != null {
-  $event.ocsf.user = { name: move $event.vpn_user }
+  // FortiGate writes a bare IKE identity number for `user`, which parses as an
+  // integer, but OCSF types the name as a string.
+  $event.ocsf.user = { name: (move $event.vpn_user).string() }
   if $event.vpn_group != null {
-    $event.ocsf.user.groups = [{ name: move $event.vpn_group }]
+    $event.ocsf.user.groups = [{ name: (move $event.vpn_group).string() }]
   }
 }
 drop $event.vpn_user?
 drop $event.vpn_group?
+drop $event.vpn_auth_failure
 
 // `srccountry` is where the remote peer is.
 if $event.fortinet.srccountry? != null {
@@ -210,12 +252,17 @@ if $event.fortinet.srccountry? != null {
   }
 }
 
-// `status`/`result` reflect the negotiation outcome; `reason` explains it.
+// `status` reflects the outcome. `reason` explains it on the SSL-VPN logs and
+// `result` does the same on the IKE logs, where it also carries the only
+// mention of extended authentication. "OK" merely restates a successful
+// `status`; the other sentinel values are already null.
 if $event.fortinet.status? != null {
   $event.ocsf.status_id = fortinet::$statuses[move $event.fortinet.status]? else 0
 }
 if $event.fortinet.reason? != null {
   $event.ocsf.status_code = move $event.fortinet.reason
+} else if $event.fortinet.result? != null and $event.fortinet.result != "OK" {
+  $event.ocsf.status_code = move $event.fortinet.result
 }
 drop $event.fortinet.result?
 

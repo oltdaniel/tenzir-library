@@ -36,7 +36,7 @@ FortiGate log reaches a class; nothing is dropped.
 | `event/endpoint`, `event/vpn` (tunnels) | `logs/endpoint`, `logs/vpn` | 4014 Tunnel Activity | ASIM NetworkSession |
 | `utm/ips`, `utm/anomaly`, `utm/virus`, `utm/dlp`, `event/wireless` | `logs/ips`, `logs/anomaly`, `logs/virus`, `logs/dlp`, `logs/wireless` | 2004 Detection Finding | ASIM AlertEvent |
 | `event/security-rating` | `logs/security_rating` | 2003 Compliance Finding | ASIM AlertEvent |
-| `event/user`, `event/system` (login/logout), `event/vpn` (SSL login fail) | `logs/authentication`, `logs/vpn` | 3002 Authentication | ASIM Authentication |
+| `event/user`, `event/system` (login/logout), `event/vpn` (login failures) | `logs/authentication`, `logs/vpn` | 3002 Authentication | ASIM Authentication |
 | `event/*` with `cfgpath` under `user.local` | `logs/config` | 3001 Account Change | ASIM UserManagement |
 | `event/*` with `cfgpath` under `user.group` | `logs/config` | 3006 Group Management | ASIM UserManagement |
 | `event/*` with any other `cfgpath` | `logs/config` | 3004 Entity Management | ASIM AuditEvent |
@@ -223,11 +223,24 @@ by the last five digits of `logid` (the message ID from Fortinet's catalogue):
 IKE negotiation logs name both ends with `locip`/`remip`, while tunnel-level
 logs name only the remote peer.
 
+Rejected logins become Authentication instead of Tunnel Activity, so that they
+reach `ASimAuthenticationEventLogs` where Sentinel's built-in content looks for
+them. The two VPN technologies signal a rejection differently: SSL-VPN has a
+dedicated message ID, while IPsec reports it on the generic phase-1 message and
+names the mechanism in `result`. Fortinet's own guidance for alerting on failed
+IPsec logins is to filter that field.
+
+Neither technology has a matching success message — a successful login of
+either kind is reported as a tunnel-up event.
+
 | FortiGate | OCSF | Notes |
 | --- | --- | --- |
-| `logid` 39426 | class 3002, `status_id` = Failure | SSL-VPN login failure. The catalogue has no matching success message; a successful login is reported as a tunnel-up event instead. |
-| `user`, `xauthuser`, `eapuser` | `user.name` | IKE names the identity through XAuth or EAP instead of `user`. |
-| `locip`/`locport`, `remip`/`remport` | `src_endpoint`/`dst_endpoint` | Oriented by `init`/`role`: the side that opened the exchange becomes the source. |
+| `logid` 39426 | class 3002, `status_id` = Failure | SSL-VPN login failure. |
+| `result` ending in "authentication failed" | class 3002, `status_id` = Failure | IPsec extended-authentication failure, reported on `logid` 37121. |
+| `result` starting with `XAUTH` or `EAP` | `auth_protocol_id` | XAuth has no OCSF enum value, so it becomes Other with `auth_protocol` spelled out. |
+| `vpntunnel` (on a rejected login) | `service.name` | The tunnel the client authenticated against. Reaches ASIM as `TargetAppName`. |
+| `xauthuser`, `eapuser`, else `user` | `user.name` | When extended authentication is in play, `user` holds the numeric IKE identity rather than a login name, so the XAuth and EAP fields win. |
+| `locip`/`locport`, `remip`/`remport` | `src_endpoint`/`dst_endpoint` | On a tunnel, oriented by `init`/`role`: the side that opened the exchange becomes the source. On a rejected login the remote peer is always the source, since it is the client that was turned away. |
 | `vpntunnel`, else `phase2_name` | `tunnel_interface.name` | |
 | `tunnelip` | `tunnel_interface.ip` | The address on the tunnel interface itself, not on either peer. |
 | `tunnelid` | `session.uid` | |
@@ -235,7 +248,8 @@ logs name only the remote peer.
 | `dst_host` | `dst_endpoint.hostname` | The internal host reached through the tunnel; SSL-VPN web mode reports this instead of an address. |
 | `dir` | `connection_info.direction_id` | |
 | `duration`, `sentbyte`/`rcvdbyte` | `cumulative_traffic.*` | Tunnel statistics describe a tunnel that is still up, so the counters are cumulative. |
-| `status`, `reason` | `status_id`, `status_code` | |
+| `status` | `status_id` | FortiGate spells the failure case "failure" here and "failed" on the `event/user` logs. |
+| `reason`, else `result` | `status_code` | `reason` explains the outcome on SSL-VPN logs; `result` does the same on IKE logs. `OK` only restates a successful `status`, so it is dropped. |
 
 ### `config` → 3001 / 3004 / 3006
 
