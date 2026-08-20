@@ -355,9 +355,12 @@ here; `unordered` is the only lever that works.
   covering roughly 90 categories. Until it exists, the values are preserved
   verbatim in `unmapped` and do not reach ASIM's `UrlCategory`.
 - **Long numeric identifiers lose precision at parse time.** `parse_kv` reads a
-  19-digit `iccid` as a float, so it arrives as `8.930272040303814e+19`. This
-  happens before the mapping runs and affects any FortiOS field wider than a
-  double's exact integer range.
+  value above `uint64` max as a double, so the 20-digit `iccid` arrives as
+  `8.930272040303814e+19`. The boundary is that maximum, not a digit count:
+  19-digit values stay exact. This happens before the mapping runs, so no
+  change to the mappers can recover it — the value has to be kept as text at
+  parse time, for which `split_regex` on the raw line works where `parse_kv`
+  and `parse_grok` both coerce.
 
 ## Checking coverage after a FortiOS change
 
