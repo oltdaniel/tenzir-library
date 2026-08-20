@@ -32,7 +32,7 @@ $event.ocsf.src_endpoint = {
 // `user` is the authenticated FortiClient user.
 if $event.fortinet.user? != null {
   $event.ocsf.user = {
-    name: move $event.fortinet.user,
+    name: (move $event.fortinet.user).string(),
   }
 }
 

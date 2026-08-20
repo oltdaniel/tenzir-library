@@ -21,7 +21,7 @@ args:
 if $event.fortinet.user? != null {
   $event.ocsf.actor = {
     user: {
-      name: move $event.fortinet.user,
+      name: (move $event.fortinet.user).string(),
     },
   }
 }

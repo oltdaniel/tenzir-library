@@ -31,7 +31,7 @@ $event.ocsf.src_endpoint = {
   interface_name: move $event.fortinet.srcintf,
 }
 if $event.fortinet.srcname? != null {
-  $event.ocsf.src_endpoint.name = move $event.fortinet.srcname
+  $event.ocsf.src_endpoint.name = (move $event.fortinet.srcname).string()
 }
 
 $event.ocsf.dst_endpoint = {
@@ -40,7 +40,7 @@ $event.ocsf.dst_endpoint = {
   interface_name: move $event.fortinet.dstintf,
 }
 if $event.fortinet.dstname? != null {
-  $event.ocsf.dst_endpoint.name = move $event.fortinet.dstname
+  $event.ocsf.dst_endpoint.name = (move $event.fortinet.dstname).string()
 }
 
 // `service` is the application-layer protocol name identified by FortiGate.

@@ -18,8 +18,9 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
-// `hostname` is the virtual host name of the requested site.
-$event.ocsf.dst_endpoint.hostname = move $event.fortinet.hostname
+// `hostname` is the virtual host name of the requested site. It is the Host
+// header, so it can be a bare address, which `parse_kv` types as an `ip`.
+$event.ocsf.dst_endpoint.hostname = (move $event.fortinet.hostname).string()
 
 fortinet::fortigate::ocsf::connection_info event=$event
 

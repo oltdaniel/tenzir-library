@@ -26,7 +26,7 @@ fortinet::fortigate::ocsf::network_endpoints event=$event
 fortinet::fortigate::ocsf::connection_info event=$event
 
 $event.ocsf.query = {
-  hostname: move $event.fortinet.qname,
+  hostname: (move $event.fortinet.qname).string(),
   class: move $event.fortinet.qclass,
   packet_uid: move $event.fortinet.xid,
   type: move $event.fortinet.qtype,

@@ -23,19 +23,21 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 
 // The authenticating user.
 $event.ocsf.user = {
-  name: move $event.fortinet.user,
+  // A FortiGate login name can be all digits, which `parse_kv` types as an
+  // integer; OCSF types the name as a string.
+  name: (move $event.fortinet.user).string(),
 }
 
 // event/user: `group` is the local user group.
 if $event.fortinet.group? != null {
-  $event.ocsf.user.groups = [{ name: move $event.fortinet.group }]
+  $event.ocsf.user.groups = [{ name: (move $event.fortinet.group).string() }]
 }
 
 // event/system: `profile` is the admin privilege profile; presence implies
 // an administrative account.
 if $event.fortinet.profile? != null {
   $event.ocsf.user.type_id = 2  // Admin
-  $event.ocsf.user.groups = [{ name: move $event.fortinet.profile }]
+  $event.ocsf.user.groups = [{ name: (move $event.fortinet.profile).string() }]
 }
 
 $event.ocsf.src_endpoint = {

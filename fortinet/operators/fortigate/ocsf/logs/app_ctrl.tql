@@ -25,7 +25,7 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
-$event.ocsf.dst_endpoint.hostname = move $event.fortinet.hostname
+$event.ocsf.dst_endpoint.hostname = (move $event.fortinet.hostname).string()
 
 fortinet::fortigate::ocsf::connection_info event=$event
 
