@@ -32,9 +32,9 @@ assert unmapped.srcmac? == null
 assert unmapped.dstmac? == null
 microsoft::sentinel::map
 assert SrcUsername == "12345" and DstUsername == "service-user"
-assert SrcFQDN == "workstation.example.test" and DstFQDN == "server.example.test"
+assert SrcHostname == "workstation.example.test" and DstHostname == "server.example.test"
 // ASIM records the source address before translation as SrcNatIpAddr.
 assert SrcIpAddr == 172.16.200.2 and SrcNatIpAddr == 10.1.100.11
 assert DstNatIpAddr == 10.2.0.10
 assert AdditionalFields.ocsf_unmapped.dstunauthusersource == "ldap"
-select EventSchema, SrcUsername, DstUsername, SrcFQDN, DstFQDN, SrcNatIpAddr, DstNatIpAddr
+select EventSchema, SrcUsername, DstUsername, SrcHostname, DstHostname, SrcNatIpAddr, DstNatIpAddr

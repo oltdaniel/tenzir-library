@@ -1,24 +1,7 @@
-warning: field `SrcFQDN` not found
-  --> tests/fortigate/asim/passive-identities.tql:16:47
-   |
-16 | select EventSchema, SrcUsername, DstUsername, SrcFQDN, DstFQDN
-   |                                               ~~~~~~~
-   |
-   = hint: did you mean `DvcFQDN`?
-   = hint: append `?` to suppress this warning
-
-warning: field `DstFQDN` not found
-  --> tests/fortigate/asim/passive-identities.tql:16:56
-   |
-16 | select EventSchema, SrcUsername, DstUsername, SrcFQDN, DstFQDN
-   |                                                        ~~~~~~~
-   |
-   = hint: did you mean `DvcFQDN`?
-   = hint: append `?` to suppress this warning
 {
   EventSchema: "NetworkSession",
   SrcUsername: "10001",
   DstUsername: "20002",
-  SrcFQDN: null,
-  DstFQDN: null,
+  SrcHostname: "12345",
+  DstHostname: "10.0.0.9",
 }

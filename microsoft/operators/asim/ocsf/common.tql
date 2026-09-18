@@ -82,10 +82,12 @@ match $event.ocsf.status? {
 }
 $event.asim.EventOriginalResultDetails = $event.ocsf.status_code?.string() else $event.ocsf.status_detail?
 
-$event.asim.Dvc = $event.ocsf.device?.hostname? else $event.ocsf.device?.ip?.string() else $event.asim.EventProduct
+$event.asim.Dvc = $event.ocsf.device?.uid? else $event.ocsf.device?.ip?.string() else $event.asim.EventProduct
 if $event.ocsf.device?.hostname? != null {
   $event.asim.DvcHostname = $event.ocsf.device.hostname
-  $event.asim.DvcFQDN = $event.ocsf.device.hostname
+  if $event.ocsf.device.domain? != null {
+    $event.asim.DvcFQDN = $event.ocsf.device.hostname
+  }
 }
 if $event.ocsf.device?.uid? != null {
   $event.asim.DvcId = $event.ocsf.device.uid

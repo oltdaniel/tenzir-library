@@ -1,15 +1,9 @@
-warning: field `DstFQDN` not found
-  --> tests/fortigate/asim/endpoint-identities.tql:35:50
-   |
-35 | assert SrcFQDN == "workstation.example.test" and DstFQDN == "server.example.test"
-   |                                                  ~~~~~~~
-   |
-   = hint: did you mean `DvcFQDN`?
-   = hint: append `?` to suppress this warning
-
-warning: assertion failure
-  --> tests/fortigate/asim/endpoint-identities.tql:35:8
-   |
-35 | assert SrcFQDN == "workstation.example.test" and DstFQDN == "server.example.test"
-   |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   |
+{
+  EventSchema: "NetworkSession",
+  SrcUsername: "12345",
+  DstUsername: "service-user",
+  SrcHostname: "workstation.example.test",
+  DstHostname: "server.example.test",
+  SrcNatIpAddr: 10.1.100.11,
+  DstNatIpAddr: 10.2.0.10,
+}
