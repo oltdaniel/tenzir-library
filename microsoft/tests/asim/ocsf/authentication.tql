@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   activity_id: 1,
   activity_name: "Logon",
@@ -23,7 +27,7 @@ from {
       vendor_name: "Microsoft",
     },
     profiles: ["host"],
-    version: "1.8.0",
+    version: "1.9.0",
   },
   device: {
     hostname: "DC01.corp.local",
@@ -70,7 +74,7 @@ from {
       },
     },
     profiles: ["cloud", "security_control"],
-    version: "1.8.0",
+    version: "1.9.0",
   },
   cloud: {
     provider: "Azure",
@@ -131,7 +135,7 @@ from {
       vendor_name: "Microsoft",
     },
     profiles: ["host"],
-    version: "1.8.0",
+    version: "1.9.0",
   },
   device: {
     hostname: "DC01.corp.local",
@@ -145,4 +149,3 @@ from {
 @name = "ocsf.authentication"
 microsoft::asim::ocsf::map
 name = @name
-sort EventOriginalUid

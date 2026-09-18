@@ -1,0 +1,64 @@
+---
+description: >
+  Sysmon RegistryEvent Object Created/Deleted (EID 12) →
+  OCSF Registry Key Activity (201001) for CreateKey/DeleteKey, or
+  OCSF Registry Value Activity (201002) for DeleteValue
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+$ocsf._event_type = move $windows.EventData.EventType
+$ocsf._target_obj = move $windows.EventData.TargetObject
+
+$ocsf.category_uid = 1
+
+match $ocsf._event_type {
+  "DeleteValue" => {
+    // Registry Value Activity — the value itself was deleted.
+    @name = "ocsf.registry_value_activity"
+    $ocsf.class_uid = 201002
+    $ocsf.activity_id = 4  // Delete
+    $ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+    $ocsf._parts = $ocsf._target_obj.split("\\")
+    $ocsf.reg_value = {
+      path: $ocsf._parts.slice(end=-1).join("\\"),
+      name: $ocsf._parts[-1],
+    }
+    drop $ocsf._parts
+  }
+  _ => {
+    // Registry Key Activity — key created or deleted.
+    @name = "ocsf.registry_key_activity"
+    $ocsf.class_uid = 201001
+    $ocsf.activity_id = 4 if $ocsf._event_type == "DeleteKey" else 1  // Delete / Create
+    $ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+    $ocsf.reg_key = { path: $ocsf._target_obj }
+  }
+}
+drop $ocsf._event_type, $ocsf._target_obj
+
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf.actor = {
+  process: {
+    uid: move $windows.EventData.ProcessGuid,
+    pid: (move $windows.EventData.ProcessId).int(),
+    path: move $windows.EventData.Image,
+    file: { type_id: 8 },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+drop $ocsf._user
+$ocsf.actor.process.name = $ocsf.actor.process.path.split("\\")[-1]
+$ocsf.actor.process.file.name = $ocsf.actor.process.name
+$ocsf.actor.process.file.path = $ocsf.actor.process.path

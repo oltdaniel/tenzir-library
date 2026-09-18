@@ -1,11 +1,13 @@
 ---
-description: FortiGate → OCSF
+description: Maps a structured FortiGate event to OCSF 1.9.
 args:
-  named:
+  positional:
     - name: event
-      description: The field that holds the event to map.
       type: field
-      default: this
+      description: The structured source event to map.
+    - name: ocsf
+      type: field
+      description: The field that receives the OCSF event.
 ---
 
 $event = {...$event, fortinet: $event, ocsf: {}}
@@ -50,7 +52,7 @@ $event.ocsf.metadata = {
   },
   profiles: ["host"],
   type: move $event.fortinet.type?,
-  version: "1.8.0",
+  version: "1.9.0",
 }
 
 // Keep the offset in `original_time` so the source timestamp stays unambiguous,
@@ -190,4 +192,4 @@ if $event.ocsf.metadata.type == "utm" {
   fortinet::fortigate::ocsf::base event=$event
 }
 
-$event = {...$event.ocsf, unmapped: $event.fortinet}
+$ocsf = {...$event.ocsf, unmapped: $event.fortinet}

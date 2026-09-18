@@ -1,0 +1,66 @@
+---
+description: Sysmon FileCreateStreamHash (EID 15) → OCSF File System Activity (1001, Create)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+@name = "ocsf.file_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1001
+$ocsf.activity_id = 1  // Create
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+// TargetFilename format: "C:\path\file.exe:Zone.Identifier"
+// Split on all colons, then rejoin all-but-last to reconstruct the full file path
+// (which itself contains a colon after the drive letter).
+$ocsf._target = move $windows.EventData.TargetFilename
+
+$ocsf.file = {
+  path: $ocsf._target.split(":").slice(end=-1).join(":"),
+  created_time: move $windows.EventData.CreationUtcTime,
+  type_id: 1,  // Regular File
+}
+$ocsf.file.name = $ocsf.file.path.split("\\")[-1]
+
+// The ADS stream name (e.g. "Zone.Identifier") maps to the OCSF component field.
+$ocsf.component = $ocsf._target.split(":")[-1]
+
+drop $ocsf._target
+
+// Hash field uses the same comma-separated "ALGO=value" format as Hashes on other EIDs.
+$ocsf.file.hashes = ((move $windows.EventData.Hash)
+  .split(",")
+  .map(h => h.split("=", max=1))
+  .map(kv => {
+    algorithm_id: microsoft::$sysmon_algorithms[kv[0]?]? else 99,
+    value: kv[1]?,
+  }))
+
+// Contents is the raw ADS content (e.g. Zone.Identifier data) — no OCSF field for it.
+// Left in unmapped.
+
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf.actor = {
+  process: {
+    uid: move $windows.EventData.ProcessGuid,
+    pid: (move $windows.EventData.ProcessId).int(),
+    path: move $windows.EventData.Image,
+    file: { type_id: 8 },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+drop $ocsf._user
+
+$ocsf.actor.process.name = $ocsf.actor.process.path.split("\\")[-1]
+$ocsf.actor.process.file.name = $ocsf.actor.process.name
+$ocsf.actor.process.file.path = $ocsf.actor.process.path

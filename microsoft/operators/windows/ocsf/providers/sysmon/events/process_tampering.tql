@@ -1,0 +1,65 @@
+---
+description: Sysmon ProcessTampering (EID 25) → OCSF Process Activity (1007, Inject)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+// Process tampering (hollowing, herpaderping) is a form of process injection
+// where the process image is replaced or locked after creation.
+// OCSF Process Activity Inject (4) is the closest semantic match.
+
+@name = "ocsf.process_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1007
+$ocsf.activity_id = 4  // Inject
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+// injection_type_id 99 (Other) because hollowing/herpaderping are not
+// Remote Thread, Load Library, or Queue APC.
+// injection_type must be the enum caption "Other" when id=99; the Sysmon-specific
+// string (e.g. "Image is replaced") is preserved in unmapped for analysts.
+$ocsf.injection_type_id = 99
+$ocsf.injection_type = "Other"
+$windows.EventData.TamperingType = move $windows.EventData.Type
+
+// The tampered process is both the actor and the target (Sysmon only reports it).
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf.process = {
+  uid: move $windows.EventData.ProcessGuid,
+  pid: (move $windows.EventData.ProcessId).int(),
+  path: move $windows.EventData.Image,
+  file: { type_id: 8 },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+$ocsf.process.name = $ocsf.process.path.split("\\")[-1]
+$ocsf.process.file.name = $ocsf.process.name
+$ocsf.process.file.path = $ocsf.process.path
+
+$ocsf.actor = {
+  process: {
+    uid: $ocsf.process.uid,
+    pid: $ocsf.process.pid,
+    path: $ocsf.process.path,
+    name: $ocsf.process.name,
+    file: {
+      type_id: 8,
+      name: $ocsf.process.file.name,
+      path: $ocsf.process.file.path,
+    },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+drop $ocsf._user

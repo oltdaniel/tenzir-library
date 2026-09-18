@@ -1,0 +1,94 @@
+{
+  activity_id: 1,
+  actor: {
+    process: {
+      file: {
+        name: "payload.exe",
+        path: "C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.exe",
+        type_id: 8,
+      },
+      name: "payload.exe",
+      path: "C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.exe",
+      pid: 4812,
+      uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E03}",
+    },
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  category_uid: 4,
+  class_uid: 4001,
+  connection_info: {
+    direction_id: 2,
+    protocol_name: "tcp",
+    protocol_num: 6,
+    protocol_ver_id: 4,
+  },
+  device: {
+    hostname: "WORKSTATION01.corp.local",
+  },
+  dst_endpoint: {
+    hostname: null,
+    ip: 185.220.101.47,
+    port: 443,
+    svc_name: "https",
+  },
+  is_src_dst_assignment_known: true,
+  metadata: {
+    event_code: "3",
+    extensions: [
+      {
+        name: "win",
+      },
+    ],
+    log_format: "xml",
+    log_level: "4",
+    log_name: "Microsoft-Windows-Sysmon/Operational",
+    log_version: "5",
+    logged_time: 2025-03-22T10:16:05.738Z,
+    loggers: [
+      {
+        device: {
+          hostname: "WORKSTATION01.corp.local",
+        },
+        event_uid: "1003",
+        log_name: "Microsoft-Windows-Sysmon/Operational",
+        log_provider: "Microsoft-Windows-Sysmon",
+        logged_time: 2025-03-22T10:16:05.738Z,
+        name: "Windows Event Log",
+        product: {
+          name: "Windows Event Log",
+          vendor_name: "Microsoft",
+        },
+      },
+    ],
+    original_event_uid: "1003",
+    product: {
+      name: "Microsoft-Windows-Sysmon",
+      uid: "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}",
+      vendor_name: "Microsoft",
+    },
+    profiles: [
+      "host",
+    ],
+    version: "1.9.0",
+  },
+  severity_id: 1,
+  src_endpoint: {
+    hostname: "WORKSTATION01.corp.local",
+    ip: 192.168.1.45,
+    port: 54321,
+    svc_name: null,
+  },
+  time: 2025-03-22T10:16:05.738Z,
+  type_uid: 400101,
+  unmapped: {
+    System: {
+      Task: 3,
+      Opcode: 0,
+      Keywords: "0x8000000000000000",
+    },
+    EventData: {},
+  },
+}

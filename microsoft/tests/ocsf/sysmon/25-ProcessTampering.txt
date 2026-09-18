@@ -1,0 +1,94 @@
+{
+  activity_id: 4,
+  actor: {
+    process: {
+      file: {
+        name: "svchost.exe",
+        path: "C:\\Windows\\System32\\svchost.exe",
+        type_id: 8,
+      },
+      name: "svchost.exe",
+      path: "C:\\Windows\\System32\\svchost.exe",
+      pid: 7744,
+      uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E06}",
+    },
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  category_uid: 1,
+  class_uid: 1007,
+  device: {
+    hostname: "WORKSTATION01.corp.local",
+  },
+  injection_type: "Other",
+  injection_type_id: 99,
+  metadata: {
+    event_code: "25",
+    extensions: [
+      {
+        name: "win",
+      },
+    ],
+    log_format: "xml",
+    log_level: "4",
+    log_name: "Microsoft-Windows-Sysmon/Operational",
+    log_version: "5",
+    logged_time: 2025-03-22T10:31:00Z,
+    loggers: [
+      {
+        device: {
+          hostname: "WORKSTATION01.corp.local",
+        },
+        event_uid: "1025",
+        log_name: "Microsoft-Windows-Sysmon/Operational",
+        log_provider: "Microsoft-Windows-Sysmon",
+        logged_time: 2025-03-22T10:31:00Z,
+        name: "Windows Event Log",
+        product: {
+          name: "Windows Event Log",
+          vendor_name: "Microsoft",
+        },
+      },
+    ],
+    original_event_uid: "1025",
+    product: {
+      name: "Microsoft-Windows-Sysmon",
+      uid: "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}",
+      vendor_name: "Microsoft",
+    },
+    profiles: [
+      "host",
+    ],
+    version: "1.9.0",
+  },
+  process: {
+    file: {
+      name: "svchost.exe",
+      path: "C:\\Windows\\System32\\svchost.exe",
+      type_id: 8,
+    },
+    name: "svchost.exe",
+    path: "C:\\Windows\\System32\\svchost.exe",
+    pid: 7744,
+    uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E06}",
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  severity_id: 1,
+  time: 2025-03-22T10:31:00Z,
+  type_uid: 100704,
+  unmapped: {
+    System: {
+      Task: 25,
+      Opcode: 0,
+      Keywords: "0x8000000000000000",
+    },
+    EventData: {
+      TamperingType: "Image is replaced",
+    },
+  },
+}

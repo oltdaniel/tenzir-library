@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   metadata: {
     eventTimestamp: 2026-01-15T10:30:00Z,
@@ -271,7 +275,5 @@ from {
     },
   },
 }
-google::ocsf::map
-ocsf::derive
-ocsf::cast
-sort metadata.original_event_uid
+google::ocsf::from_udm
+ocsf_cast

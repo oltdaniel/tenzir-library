@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   activity_id: 6,
   activity_name: "Post",
@@ -23,7 +27,7 @@ from {
     },
     profiles: ["host", "network_proxy", "security_control", "cloud"],
     tenant_uid: "tenant-1",
-    version: "1.8.0",
+    version: "1.9.0",
   },
   cloud: {
     provider: "Azure",
@@ -224,7 +228,7 @@ from {
       vendor_name: "Example",
     },
     profiles: ["host"],
-    version: "1.8.0",
+    version: "1.9.0",
   },
   device: {
     hostname: "www.example.org",
@@ -270,7 +274,7 @@ from {
       vendor_name: "Example",
     },
     profiles: ["host", "cloud"],
-    version: "1.8.0",
+    version: "1.9.0",
   },
   cloud: {
     provider: "Example Cloud",
@@ -310,8 +314,7 @@ from {
   },
 }
 @name = "ocsf.http_activity"
-ocsf::derive
-ocsf::cast
+ocsf_derive
+ocsf_cast
 microsoft::asim::ocsf::map
 name = @name
-sort EventOriginalUid

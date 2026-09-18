@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   activity_id: 1,
   activity_name: "Query",
@@ -15,7 +19,7 @@ from {
       name: "DNS",
       vendor_name: "Microsoft",
     },
-    version: "1.8.0",
+    version: "1.9.0",
   },
   device: {
     hostname: "dns1",
@@ -31,4 +35,3 @@ from {
 }
 microsoft::asim::ocsf::map
 name = @name
-sort EventOriginalUid

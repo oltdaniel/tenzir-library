@@ -1,0 +1,104 @@
+{
+  activity_id: 1,
+  actor: {
+    process: {
+      file: {
+        name: "payload.exe",
+        path: "C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.exe",
+        type_id: 8,
+      },
+      name: "payload.exe",
+      path: "C:\\Users\\jdoe\\AppData\\Local\\Temp\\payload.exe",
+      pid: 4812,
+      uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E03}",
+    },
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  category_uid: 1,
+  class_uid: 1005,
+  device: {
+    hostname: "WORKSTATION01.corp.local",
+  },
+  metadata: {
+    event_code: "7",
+    extensions: [
+      {
+        name: "win",
+      },
+    ],
+    log_format: "xml",
+    log_level: "4",
+    log_name: "Microsoft-Windows-Sysmon/Operational",
+    log_version: "3",
+    logged_time: 2025-03-22T10:18:00.500Z,
+    loggers: [
+      {
+        device: {
+          hostname: "WORKSTATION01.corp.local",
+        },
+        event_uid: "1007",
+        log_name: "Microsoft-Windows-Sysmon/Operational",
+        log_provider: "Microsoft-Windows-Sysmon",
+        logged_time: 2025-03-22T10:18:00.500Z,
+        name: "Windows Event Log",
+        product: {
+          name: "Windows Event Log",
+          vendor_name: "Microsoft",
+        },
+      },
+    ],
+    original_event_uid: "1007",
+    product: {
+      name: "Microsoft-Windows-Sysmon",
+      uid: "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}",
+      vendor_name: "Microsoft",
+    },
+    profiles: [
+      "host",
+    ],
+    version: "1.9.0",
+  },
+  module: {
+    file: {
+      company_name: null,
+      desc: null,
+      hashes: [
+        {
+          algorithm_id: 2,
+          value: "AABBCCDD...",
+        },
+        {
+          algorithm_id: 1,
+          value: "11223344...",
+        },
+        {
+          algorithm_id: 3,
+          value: "55667788...",
+        },
+        {
+          algorithm_id: 18,
+          value: "99AABBCC...",
+        },
+      ],
+      internal_name: null,
+      name: "evil.dll",
+      path: "C:\\Users\\jdoe\\AppData\\Local\\Temp\\evil.dll",
+      type_id: 8,
+      version: null,
+    },
+  },
+  severity_id: 1,
+  time: 2025-03-22T10:18:00.500Z,
+  type_uid: 100501,
+  unmapped: {
+    System: {
+      Task: 7,
+      Opcode: 0,
+      Keywords: "0x8000000000000000",
+    },
+    EventData: {},
+  },
+}

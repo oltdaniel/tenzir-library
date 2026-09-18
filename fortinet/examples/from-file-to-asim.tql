@@ -17,12 +17,12 @@ from_file "fortigate.log" {
 unordered {
   fortinet = line.parse_kv()
 }
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 fortinet.raw_data = move line
 fortinet.raw_data_size = fortinet.raw_data.length_bytes()
 this = fortinet
-ocsf::derive
-ocsf::cast
+ocsf_derive
+ocsf_cast
 // Every event reaches a Sentinel table: an ASIM schema where one exists, and
 // CommonSecurityLog for the rest. FortiGate's email filter logs and its device
 // health records have no ASIM schema, so they take the second path with the

@@ -1,7 +1,11 @@
+---
+pre-compare: sort
+---
+
 from_file f"{env("TENZIR_INPUTS")}/ftp.json" {
   read_json
 }
-suricata::ocsf::map
-ocsf::derive
-ocsf::cast
-sort
+this = {source: this, ocsf: {}}
+suricata::ocsf::map source, ocsf
+this = ocsf
+ocsf_cast

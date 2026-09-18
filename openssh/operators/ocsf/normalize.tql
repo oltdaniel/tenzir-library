@@ -1,0 +1,31 @@
+---
+description: |
+  Normalizes a Syslog event carrying an OpenSSH `sshd` message to OCSF.
+
+  ```tql
+  where app_name in openssh::$app_names
+  openssh::ocsf::normalize
+  ```
+
+  The operator parses the message, combines related records from the same
+  host, process, and event phase, maps the result to OCSF, and preserves the
+  original Syslog records as provenance.
+args:
+  positional:
+    - name: syslog
+      description: The Syslog event carrying the `sshd` message.
+      type: field
+      default: this
+  named:
+    - name: into
+      description: The field that receives the OCSF event.
+      type: field
+      default: this
+---
+
+$into.syslog = $syslog
+openssh::parse $into.syslog.message, $into.openssh, wide=true
+$into.openssh.syslog = $into.syslog
+openssh::aggregate $into.syslog.message, $into.openssh
+openssh::ocsf::map $into.openssh, $into.ocsf
+$into = $into.ocsf

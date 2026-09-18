@@ -1,0 +1,109 @@
+---
+description: Sysmon ProcessCreate (EID 1) → OCSF Process Activity (1007, Launch)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+@name = "ocsf.process_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1007
+$ocsf.activity_id = 1  // Launch
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+$ocsf.launch_type_id = 1
+
+// Map IntegrityLevel string to its OCSF enum id.
+let $integrity_ids = {
+  Unknown:   0,
+  Untrusted: 1,
+  Low:       2,
+  Medium:    3,
+  High:      4,
+  System:    5,
+  Protected: 6,
+}
+
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf._parent_user = (move $windows.EventData.ParentUser).split("\\")
+$ocsf.process = {
+  pid: (move $windows.EventData.ProcessId).int(),
+  uid: move $windows.EventData.ProcessGuid,
+  path: move $windows.EventData.Image,
+  cmd_line: move $windows.EventData.CommandLine,
+  created_time: $ocsf.time,
+  working_directory: move $windows.EventData.CurrentDirectory,
+  integrity_id: $integrity_ids[move $windows.EventData.IntegrityLevel]? else 0,
+  file: {
+    type_id: 8,  // Executable File
+    version: (move $windows.EventData.FileVersion).string(),
+    desc: move $windows.EventData.Description,
+    company_name: move $windows.EventData.Company,
+    internal_name: move $windows.EventData.OriginalFileName,
+    product: {
+      name: move $windows.EventData.Product,
+    },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+  session: {
+    uid: move $windows.EventData.LogonGuid,
+    uid_alt: move $windows.EventData.LogonId,
+  },
+  parent_process: {
+    pid: (move $windows.EventData.ParentProcessId).int(),
+    uid: move $windows.EventData.ParentProcessGuid,
+    path: move $windows.EventData.ParentImage,
+    cmd_line: move $windows.EventData.ParentCommandLine,
+    file: {
+      type_id: 8,
+    },
+    user: {
+      name: $ocsf._parent_user[-1],
+      domain: $ocsf._parent_user[0] if $ocsf._parent_user.length() > 1,
+    },
+  },
+}
+drop $ocsf._user, $ocsf._parent_user
+$ocsf.process.name = $ocsf.process.path.split("\\")[-1]
+$ocsf.process.file.name = $ocsf.process.name
+$ocsf.process.file.path = $ocsf.process.path
+$ocsf.process.parent_process.file.name = $ocsf.process.parent_process.path.split("\\")[-1]
+$ocsf.process.parent_process.file.path = $ocsf.process.parent_process.path
+
+// Parse "SHA1=abc,MD5=def,..." into fingerprint objects.
+$ocsf.process.file.hashes = ((move $windows.EventData.Hashes)
+  .split(",")
+  .map(h => h.split("=", max=1))
+  .map(kv => {
+    algorithm_id: microsoft::$sysmon_algorithms[kv[0]?]? else 99,
+    value: kv[1]?,
+  }))
+
+// The actor.process object duplicates process.parent_process per OCSF guidance:
+// for Launch events both actor.process (creator) and process.parent_process (OS
+// parent) should be populated. Sysmon does not distinguish creator from parent,
+// so the same data fills both fields.
+$ocsf.actor = {
+  process: {
+    uid: $ocsf.process.parent_process.uid,
+    pid: $ocsf.process.parent_process.pid,
+    path: $ocsf.process.parent_process.path,
+    name: $ocsf.process.parent_process.file.name,
+    cmd_line: $ocsf.process.parent_process.cmd_line,
+    file: $ocsf.process.parent_process.file,
+    user: $ocsf.process.parent_process.user,
+  },
+  user: $ocsf.process.parent_process.user,
+}
+
+// EID 1 only fires on successful process creation; there is no failure variant.
+$ocsf.status_id = 1

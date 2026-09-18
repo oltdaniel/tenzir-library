@@ -12,11 +12,11 @@ this = line.parse_syslog()
 unordered {
   fortinet = (content? else message).parse_kv()
 }
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 fortinet::fortigate::ocsf::syslog event=fortinet
 this = fortinet
-ocsf::derive
-ocsf::cast
+ocsf_derive
+ocsf_cast
 this = {
   class_uid: class_uid,
   time: time,

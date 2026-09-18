@@ -1,0 +1,47 @@
+---
+description: Sysmon RawAccessRead (EID 9) → OCSF File System Activity (1001, Read)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+@name = "ocsf.file_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1001
+$ocsf.activity_id = 2  // Read
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+// RawAccessRead targets a raw disk device, not a regular file.
+// type_id 4 (Block Device) is the closest OCSF match.
+$ocsf.file = {
+  path: move $windows.EventData.Device,
+  type_id: 4,  // Block Device
+}
+$ocsf.file.name = $ocsf.file.path.split("\\")[-1]
+
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf.actor = {
+  process: {
+    uid: move $windows.EventData.ProcessGuid,
+    pid: (move $windows.EventData.ProcessId).int(),
+    path: move $windows.EventData.Image,
+    file: {
+      type_id: 8,
+    },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+drop $ocsf._user
+
+$ocsf.actor.process.name = $ocsf.actor.process.path.split("\\")[-1]
+$ocsf.actor.process.file.name = $ocsf.actor.process.name
+$ocsf.actor.process.file.path = $ocsf.actor.process.path

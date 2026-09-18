@@ -1,8 +1,12 @@
+---
+pre-compare: sort
+---
+
 from_file f"{env("TENZIR_INPUTS")}/system-log.ndjson" {
   okta::read
 }
 where eventType == "user.lifecycle.create" or eventType == "user.account.lock" or eventType == "user.account.update_password"
-okta::ocsf::map
-ocsf::derive
-ocsf::cast
-sort time
+this = {source: this, ocsf: {}}
+okta::ocsf::map source, ocsf
+this = ocsf
+ocsf_cast

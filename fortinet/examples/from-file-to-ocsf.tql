@@ -12,8 +12,8 @@ from_file "fortigate.log" {
 unordered {
   fortinet = line.parse_kv()
 }
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 fortinet.raw_data = move line
 fortinet.raw_data_size = fortinet.raw_data.length_bytes()
 this = fortinet
-ocsf::derive
+ocsf_derive

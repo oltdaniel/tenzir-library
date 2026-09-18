@@ -1,0 +1,57 @@
+---
+description: Sysmon DriverLoad (EID 6) → OCSF Kernel Extension Activity (1002, Load)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+@name = "ocsf.kernel_extension_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1002
+$ocsf.activity_id = 1  // Load
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+// Sysmon reports driver loads from the kernel (PID 4 / System), so there is no
+// meaningful user-space actor. The required actor object is left empty.
+$ocsf.actor = {}
+
+// Replace "-" sentinels before building the file object.
+replace $windows.EventData.Signature, what="-", with=null
+replace $windows.EventData.SignatureStatus, what="-", with=null
+
+$ocsf.driver = {
+  file: {
+    path: move $windows.EventData.ImageLoaded,
+    type_id: 8,  // Executable File (kernel drivers are PE images)
+    hashes: ((move $windows.EventData.Hashes)
+               .split(",")
+               .map(h => h.split("=", max=1))
+               .map(kv => {
+                 algorithm_id: microsoft::$sysmon_algorithms[kv[0]?]? else 99,
+                 value: kv[1]?,
+               })),
+  },
+}
+$ocsf.driver.file.name = $ocsf.driver.file.path.split("\\")[-1]
+
+// Attach digital-signature details when the driver is signed.
+if $windows.EventData.Signed {
+  $ocsf.driver.file.signature = {
+    algorithm_id: 0,  // Unknown — Sysmon does not report the algorithm
+    state_id: microsoft::$sysmon_signature_states[$windows.EventData.SignatureStatus]?,
+  }
+  if $windows.EventData.Signature != null {
+    $ocsf.driver.file.signature.certificate = {
+      issuer: move $windows.EventData.Signature,
+    }
+  }
+}
+drop $windows.EventData.Signed
+drop $windows.EventData.Signature
+drop $windows.EventData.SignatureStatus

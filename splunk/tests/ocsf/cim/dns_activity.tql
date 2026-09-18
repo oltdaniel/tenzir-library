@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   tag: [
     "network",
@@ -73,7 +77,5 @@ from {
   transport: "udp",
   vendor_product: "Open Information Security Foundation Suricata",
 }
-splunk::ocsf::map
-ocsf::derive
-ocsf::cast
-sort time
+splunk::ocsf::from_cim
+ocsf_cast

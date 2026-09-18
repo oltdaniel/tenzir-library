@@ -2,10 +2,10 @@ from_file f"{env("TENZIR_INPUTS")}/*.txt" {
   read_lines
 }
 fortinet = line.parse_kv()
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 this = fortinet
-ocsf::derive
-ocsf::cast
+ocsf_derive
+ocsf_cast
 // Every class FortiGate produces must reach a Sentinel table: an ASIM schema
 // where one exists, CommonSecurityLog otherwise. Nothing is filtered out here,
 // so a class that stops mapping fails the test instead of vanishing.

@@ -6,9 +6,9 @@
   user: null,
 }
 {
-  class_uid: 6004,
+  class_uid: 4002,
   product: "URL Filtering",
   src_hostname: "192.168.14.10",
   dst_hostname: null,
-  user: "12345",
+  user: null,
 }

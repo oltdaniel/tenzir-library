@@ -1,0 +1,20 @@
+---
+description: >
+  Sysmon SysmonConfigChange (EID 16) → OCSF Base Event (0).
+  No standard OCSF class covers a security-tool configuration change;
+  all fields are preserved in unmapped for downstream use.
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+// Base Event — no specific OCSF class for Sysmon config changes.
+$ocsf.category_uid = 0
+$ocsf.class_uid = 0
+$ocsf.activity_id = 0
+$ocsf.type_uid = 0

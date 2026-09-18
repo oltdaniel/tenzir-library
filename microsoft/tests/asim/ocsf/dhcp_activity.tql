@@ -1,3 +1,7 @@
+---
+pre-compare: sort
+---
+
 from {
   activity_id: 5,
   activity_name: "Ack",
@@ -14,7 +18,7 @@ from {
       name: "DHCP",
       vendor_name: "Microsoft",
     },
-    version: "1.8.0",
+    version: "1.9.0",
   },
   device: {
     hostname: "dhcp1",
@@ -27,4 +31,3 @@ from {
 }
 microsoft::asim::ocsf::map
 name = @name
-sort EventOriginalUid

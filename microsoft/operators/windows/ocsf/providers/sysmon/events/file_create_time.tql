@@ -1,0 +1,58 @@
+---
+description: Sysmon FileCreateTime (EID 2) → OCSF File System Activity (1001, Set Attributes)
+args:
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
+      type: field
+---
+
+@name = "ocsf.file_activity"
+
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1001
+$ocsf.activity_id = 6  // Set Attributes (timestamp modification / timestomping)
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
+
+
+$ocsf.file = {
+  path: move $windows.EventData.TargetFilename,
+  created_time: move $windows.EventData.PreviousCreationUtcTime,
+  type_id: 1,  // Regular File
+}
+$ocsf.file.name = $ocsf.file.path.split("\\")[-1]
+
+// The resulting file — reflects the *new* (forged) creation timestamp.
+$ocsf.file_result = {
+  path: $ocsf.file.path,
+  name: $ocsf.file.name,
+  created_time: move $windows.EventData.CreationUtcTime,
+  type_id: 1,  // Regular File
+}
+
+// The process that performed the timestamp modification.
+$ocsf._user = (move $windows.EventData.User).split("\\")
+$ocsf.actor = {
+  process: {
+    uid: move $windows.EventData.ProcessGuid,
+    pid: (move $windows.EventData.ProcessId).int(),
+    path: move $windows.EventData.Image,
+    file: {
+      type_id: 8,  // Executable File
+    },
+  },
+  user: {
+    name: $ocsf._user[-1],
+    domain: $ocsf._user[0] if $ocsf._user.length() > 1,
+  },
+}
+drop $ocsf._user
+
+$ocsf.actor.process.name = $ocsf.actor.process.path.split("\\")[-1]
+$ocsf.actor.process.file.name = $ocsf.actor.process.name
+$ocsf.actor.process.file.path = $ocsf.actor.process.path
+
+

@@ -1,0 +1,6 @@
+from_file f"{env("TENZIR_INPUTS")}/eid-9999.xml" {
+  read_all
+}
+microsoft::windows::ocsf::normalize data
+metadata.log_format = "xml"
+drop metadata.processed_time

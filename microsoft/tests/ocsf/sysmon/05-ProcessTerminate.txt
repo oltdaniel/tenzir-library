@@ -1,0 +1,90 @@
+{
+  activity_id: 2,
+  actor: {
+    process: {
+      file: {
+        name: "cmd.exe",
+        path: "C:\\Windows\\System32\\cmd.exe",
+        type_id: 8,
+      },
+      name: "cmd.exe",
+      path: "C:\\Windows\\System32\\cmd.exe",
+      pid: 4812,
+      uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E01}",
+    },
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  category_uid: 1,
+  class_uid: 1007,
+  device: {
+    hostname: "WORKSTATION01.corp.local",
+  },
+  metadata: {
+    event_code: "5",
+    extensions: [
+      {
+        name: "win",
+      },
+    ],
+    log_format: "xml",
+    log_level: "4",
+    log_name: "Microsoft-Windows-Sysmon/Operational",
+    log_version: "3",
+    logged_time: 2025-03-22T10:14:04.900Z,
+    loggers: [
+      {
+        device: {
+          hostname: "WORKSTATION01.corp.local",
+        },
+        event_uid: "1005",
+        log_name: "Microsoft-Windows-Sysmon/Operational",
+        log_provider: "Microsoft-Windows-Sysmon",
+        logged_time: 2025-03-22T10:14:04.900Z,
+        name: "Windows Event Log",
+        product: {
+          name: "Windows Event Log",
+          vendor_name: "Microsoft",
+        },
+      },
+    ],
+    original_event_uid: "1005",
+    product: {
+      name: "Microsoft-Windows-Sysmon",
+      uid: "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}",
+      vendor_name: "Microsoft",
+    },
+    profiles: [
+      "host",
+    ],
+    version: "1.9.0",
+  },
+  process: {
+    file: {
+      name: "cmd.exe",
+      path: "C:\\Windows\\System32\\cmd.exe",
+      type_id: 8,
+    },
+    name: "cmd.exe",
+    path: "C:\\Windows\\System32\\cmd.exe",
+    pid: 4812,
+    uid: "{A23EAE89-BD56-67E0-0000-0010E9D95E01}",
+    user: {
+      domain: "CORP",
+      name: "jdoe",
+    },
+  },
+  severity_id: 1,
+  time: 2025-03-22T10:14:04.900Z,
+  type_uid: 100702,
+  unmapped: {
+    System: {
+      Task: 5,
+      Opcode: 0,
+      Keywords: "0x8000000000000000",
+    },
+    EventData: {},
+  },
+}

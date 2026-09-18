@@ -1,28 +1,63 @@
 ---
 description: PowerShell Module / Pipeline Logging (EID 4103) → OCSF Script Activity (1009, Execute)
 args:
-  named:
-    - name: event
-      description: The working event to map.
+  positional:
+    - name: windows
+      description: The Windows event to map.
+      type: field
+    - name: ocsf
+      description: The field that receives the OCSF event.
       type: field
 ---
 
 @name = "ocsf.script_activity"
 
-$event.ocsf.category_uid = 1
-$event.ocsf.class_uid = 1009
-$event.ocsf.activity_id = 1  // Execute
-$event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+$ocsf.category_uid = 1
+$ocsf.class_uid = 1009
+$ocsf.activity_id = 1  // Execute
+$ocsf.type_uid = $ocsf.class_uid * 100 + $ocsf.activity_id
 
 // Windows Level 4 (Information).
-$event.ocsf.severity_id = 1  // Informational
+$ocsf.severity_id = 1  // Informational
 
-$event.ocsf.script = {
+$ocsf.script = {
   type_id: 2,  // PowerShell
+  script_content: {
+    value: move $windows.EventData.Payload,
+  },
+}
+$ocsf.actor = {
+  process: {
+    pid: move $windows.System.Execution.ProcessID?,
+    ptid: move $windows.System.Execution.ThreadID?,
+  },
+}
+drop $windows.System.Execution?
+// ContextInfo is a rendered "Key = Value" block describing the host. Line
+// breaks do not survive every collector, so runs of whitespace separate the
+// entries.
+if $windows.EventData.ContextInfo? != null {
+  _context = $windows.EventData.ContextInfo.trim().parse_kv(
+    field_split=r"\s{2,}|\n",
+    value_split=r"\s*=\s*",
+  )
+  $ocsf.script.name = _context["Command Name"]?
+  if _context["Script Name"]? != null {
+    $ocsf.script.file = {
+      path: _context["Script Name"],
+      type_id: 1,
+    }
+    $ocsf.script.file.name = $ocsf.script.file.path.split("\\")[-1]
+    $ocsf.script.name = $ocsf.script.file.name
+  }
+  $ocsf.actor.process.cmd_line = _context["Host Application"]?
+  $ocsf.actor.user = {name: _context.User?}
+  if $ocsf.actor.user.name?.contains("\\") {
+    $ocsf.actor.user.domain = $ocsf.actor.user.name.split("\\")[0]
+    $ocsf.actor.user.name = $ocsf.actor.user.name.split("\\")[-1]
+  }
+  drop _context
 }
 
-// Payload contains the command invocation and parameter bindings as plain text;
-// preserve verbatim in unmapped because parsing it would require regex surgery.
-//
-// ContextInfo is a multi-line key=value block with host, engine, runspace,
-// pipeline, user, and shell info; also left in unmapped.
+// Keep the complete ContextInfo block in unmapped because it contains additional
+// host, engine, runspace, pipeline, and shell details.
