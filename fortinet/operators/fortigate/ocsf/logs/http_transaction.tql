@@ -1,0 +1,18 @@
+---
+description: FortiGate traffic/http-transaction logs to OCSF HTTP Activity (4002).
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+// Preserve the firewall/session context, then specialize the HTTP transaction.
+fortinet::fortigate::ocsf::logs::traffic event=$event
+@name = "ocsf.http_activity"
+$event.ocsf.class_uid = 4002
+$event.ocsf.activity_id = 0
+$event.ocsf.type_uid = 400200
+$event.ocsf.http_request.url = move $event.ocsf.url?
+fortinet::fortigate::ocsf::http event=$event
+fortinet::fortigate::ocsf::http_activity event=$event

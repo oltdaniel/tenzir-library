@@ -52,3 +52,25 @@ if $event.fortinet.action? != null {
 // `policyid` is the firewall policy rule that matched the session, distinct from
 // the DNS filter profile above.
 fortinet::fortigate::ocsf::security_control event=$event
+
+
+// OCSF 1.9 exposes the DNS message transaction ID independently of query.
+if $event.ocsf.query.packet_uid? != null {
+  $event.ocsf.transaction_id = (move $event.ocsf.query.packet_uid).int()
+}
+if $event.fortinet.rcode? != null {
+  let $rcodes = {NOERROR: 0, FORMERR: 1, SERVFAIL: 2, NXDOMAIN: 3, NOTIMP: 4, REFUSED: 5, YXDOMAIN: 6, YXRRSET: 7, NXRRSET: 8, NOTAUTH: 9, NOTZONE: 10, DSOTYPENI: 11, BADVERS: 16, BADKEY: 17, BADTIME: 18, BADMODE: 19, BADNAME: 20, BADALG: 21, BADTRUNC: 22, BADCOOKIE: 23}
+  if type_of($event.fortinet.rcode).kind in ["int64", "uint64"] {
+    if $event.fortinet.rcode in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22, 23] {
+      $event.ocsf.rcode_id = $event.fortinet.rcode
+    } else {
+      $event.ocsf.rcode_id = 99
+    }
+  } else {
+    $event.ocsf.rcode_id = $rcodes[$event.fortinet.rcode.string().to_upper()]? else 99
+  }
+  if $event.ocsf.rcode_id == 99 {
+    $event.ocsf.rcode = $event.fortinet.rcode.string()
+  }
+  drop $event.fortinet.rcode
+}

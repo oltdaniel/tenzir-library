@@ -1,10 +1,10 @@
 # FortiGate → OCSF mapping reference
 
-This document records what the FortiGate mapping does with every field FortiOS
-emits, and why. It exists so that a change in FortiGate's log format can be
+This document records the normalized fields and deliberate non-mappings for
+the supported FortiGate log families. It exists so that a change in FortiGate's log format can be
 diagnosed by reading rather than by re-deriving the original reasoning.
 
-The mapping targets **OCSF 1.8.0**. `ocsf::cast` validates the result against
+The mapping targets **OCSF 1.9.0**. `ocsf_cast` validates the result against
 that schema and drops anything that is not part of it, so a field that survives
 casting is a field that genuinely exists in OCSF.
 
@@ -12,9 +12,10 @@ casting is a field that genuinely exists in OCSF.
 
 | What | Where |
 | --- | --- |
+| Machine-readable field catalogue | [Flores, FortiOS 7.6.7](https://github.com/dr4gon123/flores/tree/010a8294674465182abf75c63f2d4e1430ca5e8e/7.6/7.6.7), with field descriptions from `7.6/fields`; reviewed at commit `010a8294674465182abf75c63f2d4e1430ca5e8e` |
 | FortiOS log field meanings | [FortiGate Log Reference](https://docs.fortinet.com/document/fortigate/7.4.0/fortios-log-message-reference) |
 | Log ID catalogue (the `logid` values used to disambiguate VPN events) | FortiOS Log Reference, "Log ID definitions" |
-| OCSF classes, objects, and enums | [OCSF schema browser](https://schema.ocsf.io/1.8.0/) |
+| OCSF classes, objects, and enums | [OCSF schema browser](https://schema.ocsf.io/1.9.0/) |
 | Where each class goes in Sentinel | [`microsoft/docs/ocsf-sentinel.md`](../../microsoft/docs/ocsf-sentinel.md) |
 
 ## Coverage
@@ -24,7 +25,8 @@ FortiGate log reaches a class; nothing is dropped.
 
 | FortiGate `type`/`subtype` | Operator | OCSF class | Sentinel destination |
 | --- | --- | --- | --- |
-| `traffic/*` | `logs/traffic` | 4001 Network Activity | ASIM NetworkSession |
+| `traffic/http-transaction` | `logs/http_transaction` | 4002 HTTP Activity | ASIM WebSession |
+| remaining `traffic/*` | `logs/traffic` | 4001 Network Activity | ASIM NetworkSession |
 | `utm/app-ctrl` | `logs/app_ctrl` | 4001 Network Activity | ASIM NetworkSession |
 | `utm/ssl` | `logs/ssl` | 4001 Network Activity | ASIM NetworkSession |
 | `event/wad` (SSL alerts) | `logs/wad` | 4001 Network Activity | ASIM NetworkSession |
@@ -84,7 +86,16 @@ in a family's own table below.
 | `service` | `dst_endpoint.svc_name` | The application-layer protocol for the destination port. |
 | `srccountry`/`dstcountry` | `*.location.country` | FortiOS emits English country **names**, not ISO 3166-1 alpha-2 codes. The name is kept verbatim because ASIM's `SrcGeoCountry`/`DstGeoCountry` expect names, so converting to a code would force a reverse lookup one hop later. `"Reserved"` is FortiOS's placeholder for RFC 1918, loopback, and multicast addresses; it is not a country and is dropped. |
 | `srcuuid`/`dstuuid` | `*.uid` | UUIDs of the matched firewall **address objects**, not of the hosts. |
-| `mastersrcmac`, else `srcmac` | `src_endpoint.mac` | `mastersrcmac` is the originating device behind a NAT; `srcmac` is the immediate previous hop. The originator wins. |
+| `mastersrcmac`, else `srcmac`; `masterdstmac`, else `dstmac` | `*.mac` | The master MAC identifies a host with multiple interfaces. A different interface MAC stays in `unmapped`. |
+| `srcname`/`dstname` | `*.hostname` | Shared by traffic and UTM, including endpoints inside detection evidence. Numeric and IP-shaped names are converted to strings. |
+| `srcdomain`, `srcmacvendor` | `src_endpoint.domain`, `.mac_vendor` | |
+| `srccity`/`dstcity`, `srcregion`/`dstregion` | `*.location.city`, `.region` | |
+| `osname`/`dstosname`, `srcswversion`/`dstswversion` | `*.os.name`, `.version` | |
+| `srchwvendor`/`dsthwvendor` | `*.hw_info.vendor_name` | Hardware revision fields have no corresponding OCSF hardware attribute. |
+| `dstdevtype` | `dst_endpoint.type` | |
+| `srcinetsvc`/`dstinetsvc` | `*.svc_name` | Named Internet services take precedence over a generic destination `service`. |
+| `user`/`dstuser`, `group` | `*.owner.name`, `src_endpoint.owner.groups[]` | Authentication and tunnel mappers retain their class-specific user objects. SSH `login` takes precedence on the destination. |
+| `unauthuser`/`dstunauthuser` | `*.owner.name` fallback | Used only when no authenticated endpoint username exists. The original passive names and `unauthusersource`/`dstunauthusersource` stay in `unmapped` to retain discovery provenance. These become ASIM `SrcUsername`/`DstUsername`. |
 | `devtype` | `src_endpoint.type` | FortiOS device fingerprint, e.g. `"Windows PC"`. |
 
 ### `connection_info.tql`
@@ -92,6 +103,8 @@ in a family's own table below.
 | FortiGate | OCSF | Notes |
 | --- | --- | --- |
 | `proto` | `connection_info.protocol_num` | |
+| `srcip`/`dstip` | `connection_info.protocol_ver_id` | Derived from the IP address family. |
+| `srczone`/`dstzone` | `*.zone` | Configured zone names replace role labels after session direction has been derived from `srcintfrole`/`dstintfrole`. |
 | `sessionid` | `connection_info.uid` | |
 | `srcintfrole`/`dstintfrole` (via zones) | `connection_info.direction_id` | Inbound when wan→internal, outbound when internal→wan, lateral when internal→internal. A wan-to-wan session is none of these and stays Unknown. |
 
@@ -101,6 +114,8 @@ in a family's own table below.
 | --- | --- | --- |
 | `profile` | `policy.name` | The UTM security profile that inspected the traffic. |
 | `policyid` | `firewall_rule.uid` | The firewall policy that matched the session. Distinct from `profile`. |
+| `policyname`, `policytype` | `firewall_rule.name`, `.type` | |
+| `poluuid` | `firewall_rule.uid` fallback | When the numeric policy ID is already mapped, the UUID remains in `unmapped`; the two identifiers are not interchangeable. |
 | `crscore` | `risk_score` | Composite UTM risk score. |
 | `crlevel` | `risk_level_id` | `low`/`medium`/`high`/`critical` → 1/2/3/4. |
 | `apprisk` | `risk_details` | The application-control rating of the detected **application**, not of the event. It must not overwrite `risk_level_id`, and FortiOS grades it on five steps (low < elevated < medium < high < critical) that do not line up with OCSF's four risk levels, so it is recorded as free text with its subject named. |
@@ -116,7 +131,11 @@ this packs them into `evidences[0]` for the `ips`, `virus`, and `dlp` families.
 | `filename`, `filesize` | `evidences[].file.name`, `.size` | |
 | `analyticscksum` | `evidences[].file.hashes[]` | A 64-character digest is recorded as SHA-256; anything else without claiming an algorithm. |
 | `url` | `evidences[].url.path` (+ `hostname`) | |
-| `agent` | `evidences[].http_request.user_agent` | |
+| `agent`, `httpmethod`, `referralurl` | `evidences[].http_request.user_agent`, `.http_method`, `.referrer` | |
+| `forwardedfor`, `trueclntip` | `evidences[].http_request.http_headers[]` | Preserve header values without guessing how to parse a proxy chain. |
+| `pathname` | `evidences[].file.path` | |
+| `filehash`, `checksum` | `evidences[].file.hashes[]` | The source does not identify the algorithm; record Unknown rather than guessing. |
+| `from`, `to`, `cc`, `subject`, `messageid` | `evidences[].email.*` | Inspected email payloads; Message-ID maps to `message_uid`, not thread `uid`. |
 
 ## Per-family notes
 
@@ -130,13 +149,15 @@ Only the fields not already covered above are listed.
 | `utmaction` | `action_id`, `disposition_id` | Takes precedence over `action` when present: it is the UTM verdict rather than the transport outcome. |
 | `duration` | `duration`, `start_time` | `time` is the session *end*, so the start is derived by subtraction. |
 | `sentbyte`/`rcvdbyte`, `sentpkt`/`rcvdpkt` | `cumulative_traffic.*` | Session lifetime totals, not an observation interval. |
+| `sentpktdelta`/`rcvdpktdelta`, `durationdelta` | `traffic.packets_out`/`.packets_in`, `.timespan.duration` | Interval duration is converted from seconds to milliseconds; interval start/end are derived from the event time. |
 | `sentdelta`/`rcvddelta` | `traffic.bytes_out`/`bytes_in` | Bytes since the previous log for the same session; these *are* one interval, so they sit beside the lifetime totals rather than replacing them. |
-| `trandisp`, `transip`, `transport` | `src_endpoint.proxy_endpoint` or `dst_endpoint.proxy_endpoint` | SNAT rewrites the source, DNAT the destination. `transip=0.0.0.0` means no effective translation. |
-| `poluuid`, `policyid`, `policytype` | `firewall_rule.uid`, `.name`, `.type` | |
+| `transip`/`transport`, `tranip`/`tranport` | `src_endpoint.proxy_endpoint`, `dst_endpoint.proxy_endpoint` | Source and destination translations are independent, including combined SNAT+DNAT. A null or `0.0.0.0` translated address is not mapped. Translation flags and ineffective values stay in `unmapped`. |
+| `poluuid`, `policyid`, `policytype`, `policyname`, `comment` | `firewall_rule.uid`, `.name`, `.type`, `.desc` | A supplied policy name replaces the numeric name fallback; the numeric ID then stays in `unmapped`. |
 | `applist` | `policy.name` | The application-control profile; `firewall_rule` already holds the firewall policy. |
 | `app` | `app_name` | |
 | `osname` | `src_endpoint.os.name` | |
 | `service` | `app_protocol_name` | Traffic logs use this rather than `svc_name`, since the class models the protocol of the session itself. |
+| `url`, `hostname`, `scheme` | `url.path`, `.hostname`, `.scheme` | HTTP transaction logs use `http_request.url` instead. |
 | `utmref` | `metadata.correlation_uid` | Links the session summary to the UTM records raised for the same session. |
 | — | `observation_point_id` = 3 | A firewall observes the connection rather than being an endpoint of it. |
 
@@ -148,7 +169,14 @@ Only the fields not already covered above are listed.
 | `url` | `http_request.url.path` | |
 | `sentbyte`/`rcvdbyte` | `traffic.bytes_out`/`bytes_in` | |
 | `action` | `disposition_id` | `allowed`/`blocked`/`monitored`. |
-| — | `activity_id` = 0 | FortiGate does not log the HTTP verb on these records. |
+| `httpmethod` | `http_request.http_method`, `activity_id` | Absent methods remain Unknown; the filter-match field `method` is never treated as an HTTP verb. |
+| `agent`, `referralurl`, `forwardedfor`, `trueclntip` | `http_request.user_agent`, `.referrer`, `.http_headers[]` | HTTP Host remains on the URL when a separate `dstname` identifies the endpoint. |
+| `contenttype` | `http_response.content_type` | |
+
+The `traffic/http-transaction` subtype also maps `httpmethod`, request headers,
+and URL details. `reqlength`/`resplength` map to HTTP request/response `length`,
+`statuscode` to `http_response.code`, and `resptype` to `.content_type`. Vendor
+timing fields without documented units remain in `unmapped`.
 
 ### `app_ctrl` → 4001 Network Activity
 
@@ -169,13 +197,16 @@ Only the fields not already covered above are listed.
 | `reason` | `status_detail` | |
 | `certhash` | `tls.certificate.fingerprints[]` | 40 characters is SHA-1, 64 is SHA-256, otherwise no algorithm is claimed. |
 | `action` | `disposition_id` | `blocked`/`exempt`. |
+| `tlsver`, `cipher`, `sni`, `keysize` | `tls.version`, `.cipher`, `.sni`, `.key_length` | |
+| `cn`, `issuer`, `sn` | `tls.certificate.subject`, `.issuer`, `.serial_number` | These aliases are interpreted only for SSL inspection events. |
 
 ### `dns` → 4003 DNS Activity
 
 | FortiGate | OCSF | Notes |
 | --- | --- | --- |
 | `eventtype` | `activity_id` | `dns-query`→Query, `dns-response`→Response. |
-| `qname`, `qtype`, `qclass`, `xid` | `query.hostname`, `.type`, `.class`, `.packet_uid` | |
+| `qname`, `qtype`, `qclass`, `xid` | `query.hostname`, `.type`, `.class`, `transaction_id` | OCSF 1.9 provides a transaction ID for both queries and responses. |
+| `rcode` | `rcode_id`, `rcode` | Numeric and mnemonic wire response codes; unknown values use Other and retain the original code. |
 | `ipaddr` | `answers[].rdata` | Responses only. |
 | `action` | `disposition_id` | `pass`/`block`/`drop`/`monitor`. Queries carry no action. |
 
@@ -184,6 +215,7 @@ Only the fields not already covered above are listed.
 | FortiGate | OCSF | Notes |
 | --- | --- | --- |
 | `filename`, `filesize` | `file.name`, `.size` | |
+| `pathname`, `sharename` | `file.path`, `share` | |
 | `filtername` | `firewall_rule.name` | The file-filter entry that matched, beneath the profile in `policy.name`. |
 
 ### `ssh` → 4007 SSH Activity
@@ -197,6 +229,7 @@ Only the fields not already covered above are listed.
 
 | FortiGate | OCSF | Notes |
 | --- | --- | --- |
+| `messageid`, `cc` | `email.message_uid`, `.cc` | Comma-separated CC recipients are a list. |
 | `from`, `to`, `subject`, `size` | `email.from`, `.to`, `.subject`, `.size` | |
 | `direction` | `direction_id` | Email Activity carries direction at the top level, not in `connection_info`. |
 | `service` | `protocol_name` | IMAPS, SMTPS, POP3S. Moved before `network_endpoints` runs so it is not also written to `dst_endpoint.svc_name`. |
@@ -215,6 +248,8 @@ Only the fields not already covered above are listed.
 | `count` | `count` | How many times the anomaly fired in the reporting interval. |
 | `dlpextra`, `filteridx`, `filtertype` | `finding_info.title`, `.uid`, `.analytic.category` | |
 | `policytype` | `firewall_rule.type` | e.g. `DoS-policy`. |
+| `attackcontext` (IPS) | `firewall_rule.match_details` | |
+| `ruleid`, `rulename`, `sensitivity` (DLP) | `finding_info.analytic.uid`, `.name`, `firewall_rule.sensitivity` | |
 
 ### `vpn` → 4014 Tunnel Activity or 3002 Authentication
 
@@ -296,14 +331,14 @@ event itself.
 | `filetype` (cifs, dlp) | FortiOS reports a file *format* (`msoffice`, `pdf`); OCSF's `file.type_id` enumerates file *kinds* (regular file, folder, symlink). `mime_type` would need a real MIME type FortiOS does not provide. |
 | `icmptype`, `icmpcode`, `icmpid` | OCSF models transport detail only as far as `connection_info.protocol_num`; there is no ICMP object on any class. |
 | `qtypeval` (dns) | The numeric query type; `query.type` already carries the string form and OCSF has no numeric slot. |
-| `proto`, `sessionid` (emailfilter) | Email Activity carries neither `connection_info` nor `traffic` in OCSF 1.8. |
+| `proto`, `sessionid` (emailfilter) | Email Activity carries neither `connection_info` nor `traffic` in OCSF 1.9. |
 | `attachment` (emailfilter) | A yes/no flag, not a filename. OCSF models attachments as `email.files`, a list of actual files. |
 | `recipient` (emailfilter) | Usually the local part only (`testpc3`) while `to` carries the full address. Mapped only when it actually contains `@`. |
 | `analyticssubmit` (virus) | Whether the sample was uploaded to FortiSandbox — the vendor's downstream workflow, not the detection. |
 | `epoch`, `eventid`, `filtercat` (dlp) | FortiOS-internal DLP bookkeeping with no OCSF counterpart. |
 | `channeltype` (ssh) | OCSF 4007 has no SSH channel field. |
 | `cookies`, `mode`, `stage`, `nextstat` (vpn) | IKE and SSL-VPN protocol internals: SPI cookies, phase-1 exchange mode, negotiation step, and FortiOS's own reporting cadence. |
-| `sn` | Overloaded. On HA logs it is a hardware serial (`FG2K5E3916900348`); on `subtype=system` logs it is a log sequence number (`1557771654`). Nothing in the record says which, so binding it to `device.hw_info.serial_number` would misattribute it. |
+| `sn` | Overloaded. On HA logs it is a hardware serial (`FG2K5E3916900348`); on `subtype=system` logs it is a log sequence number (`1557771654`). Mapping either indiscriminately to `device.hw_info.serial_number` would misattribute it. SSL inspection separately maps its certificate serial to `tls.certificate.serial_number`. |
 | `srcserver`, `devcategory` | `srcserver` is a 0/1 flag qualifying the endpoint rather than describing it. `devcategory` mixes OS families ("Windows") with hardware roles ("Router"), so neither `os.type` nor `hw_info.vendor_name` fits the whole vocabulary; `devtype` already carries the finer value. |
 | `event/*` telemetry (`ha_*`, `vcluster*`, radio and modem readings, connector inventory, FortiClient licence counts) | Appliance telemetry with no OCSF class. See `operators/fortigate/ocsf/base.tql`. |
 
@@ -335,7 +370,7 @@ enough; the mapping downstream does not need to be inside the block:
 unordered {
   fortinet = line.parse_kv()
 }
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 ```
 
 This is safe for every mapping in this package because they are stateless per
@@ -347,6 +382,29 @@ output. The package's examples all use it.
 stream, so it is not usable on a live feed. Neither `batch` nor the
 `tenzir.demand` and `tenzir.import.batch-size` settings make any difference
 here; `unordered` is the only lever that works.
+
+## Remaining vendor context
+
+Field coverage is not a promise that every Flores column has a lossless OCSF
+counterpart. The mapper preserves residual fields in `unmapped`, including:
+
+- Identity discovery methods (`*unauthusersource`) and authentication servers;
+  these are not user domains or proof of successful authentication.
+- Hardware revisions, device-family/category labels, SSIDs and radio metrics;
+  OCSF network endpoints do not expose matching attributes for all of these.
+- Address-object and policy identifiers when another identifier occupies the
+  normalized slot. Hardware identity must not be inferred from policy objects.
+- Vendor taxonomies, rating engines, sandbox workflow states, quota counters,
+  shaping metrics, SD-WAN internals, and certificate strings whose time format
+  is not specified in the catalogue.
+- HTTP headers on non-HTTP Network Activity events, which cannot carry an HTTP
+  request object. Detection findings can carry these inside evidence artifacts.
+
+Flores is a field-availability catalogue, not a set of observed payloads; many
+columns have no description. Those columns require source examples or vendor
+semantics before a precise mapping can be asserted. The regression fixtures
+combine existing source logs with documented fields and are not presented as
+captured production records.
 
 ## Known gaps
 
@@ -373,7 +431,7 @@ from_file f"{env("TENZIR_INPUTS")}/*.txt" {
   read_lines
 }
 fortinet = line.parse_kv()
-fortinet::fortigate::ocsf::map event=fortinet
+fortinet::fortigate::ocsf::normalize fortinet, into=fortinet
 this = fortinet
 family = f"{metadata.type}/{metadata.log_name}"
 f = unmapped.drop_null_fields().keys()
@@ -387,5 +445,5 @@ Run it with `TENZIR_INPUTS=fortinet/tests/fortigate/inputs uvx tenzir
 belongs in the *Deliberate non-mappings* table above.
 
 To confirm nothing is being invented, run the same corpus through
-`ocsf::derive | ocsf::cast` and watch for warnings: `ocsf::cast` drops any field
-that OCSF 1.8 does not define, and says which.
+`ocsf_derive | ocsf_cast` and watch for warnings: `ocsf_cast` drops any field
+that OCSF 1.9 does not define, and says which.

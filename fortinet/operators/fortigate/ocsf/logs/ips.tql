@@ -48,3 +48,7 @@ if $event.fortinet.action? != null {
 
 // `crscore`/`crlevel` are the composite UTM risk score and level.
 fortinet::fortigate::ocsf::risk event=$event
+
+if $event.fortinet.attackcontext? != null {
+  $event.ocsf.firewall_rule.match_details = (move $event.fortinet.attackcontext).string()
+}

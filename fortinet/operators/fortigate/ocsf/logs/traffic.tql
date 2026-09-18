@@ -26,25 +26,19 @@ $event.ocsf.activity_id = $actions[$event.fortinet.action]? else 0
 $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 
 $event.ocsf.src_endpoint = {
-  ip: move $event.fortinet.srcip,
-  port: move $event.fortinet.srcport,
-  interface_name: move $event.fortinet.srcintf,
-}
-if $event.fortinet.srcname? != null {
-  $event.ocsf.src_endpoint.name = (move $event.fortinet.srcname).string()
+  ip: move $event.fortinet.srcip?,
+  port: move $event.fortinet.srcport?,
+  interface_name: move $event.fortinet.srcintf?,
 }
 
 $event.ocsf.dst_endpoint = {
-  ip: move $event.fortinet.dstip,
-  port: move $event.fortinet.dstport,
-  interface_name: move $event.fortinet.dstintf,
-}
-if $event.fortinet.dstname? != null {
-  $event.ocsf.dst_endpoint.name = (move $event.fortinet.dstname).string()
+  ip: move $event.fortinet.dstip?,
+  port: move $event.fortinet.dstport?,
+  interface_name: move $event.fortinet.dstintf?,
 }
 
 // `service` is the application-layer protocol name identified by FortiGate.
-$event.ocsf.app_protocol_name = move $event.fortinet.service
+$event.ocsf.app_protocol_name = move $event.fortinet.service?
 
 // A firewall observes the connection between the two endpoints rather than
 // being either endpoint itself.
@@ -74,10 +68,10 @@ $event.ocsf.duration = (move $event.fortinet.duration?).seconds().count_millisec
 $event.ocsf.end_time = $event.ocsf.time
 $event.ocsf.start_time = $event.ocsf.end_time - $event.ocsf.duration.milliseconds()
 $event.ocsf.cumulative_traffic = {
-  bytes_in: move $event.fortinet.rcvdbyte,
-  bytes_out: move $event.fortinet.sentbyte,
+  bytes_in: move $event.fortinet.rcvdbyte?,
+  bytes_out: move $event.fortinet.sentbyte?,
   packets_in: move $event.fortinet.rcvdpkt?,
-  packets_out: move $event.fortinet.sentpkt,
+  packets_out: move $event.fortinet.sentpkt?,
   end_time: $event.ocsf.end_time,
   start_time: $event.ocsf.start_time,
   timespan: {
@@ -85,23 +79,21 @@ $event.ocsf.cumulative_traffic = {
   },
 }
 
-// `trandisp` is the NAT type applied; `transip`/`transport` are the translated
-// address/port. SNAT rewrites the source, DNAT rewrites the destination.
-// transip=0.0.0.0 means no effective translation (e.g. sniffer mode).
-if $event.fortinet.trandisp? == "snat" and $event.fortinet.transip? != 0.0.0.0 {
+// FortiOS logs source NAT as transip/transport and destination NAT as
+// tranip/tranport. Both may occur in the same session (snat+dnat).
+if $event.fortinet.transip? != null and $event.fortinet.transip != 0.0.0.0 {
   $event.ocsf.src_endpoint.proxy_endpoint = {
     ip: move $event.fortinet.transip,
-    port: move $event.fortinet.transport,
-  }
-} else if $event.fortinet.trandisp? == "dnat" and $event.fortinet.transip? != 0.0.0.0 {
-  $event.ocsf.dst_endpoint.proxy_endpoint = {
-    ip: move $event.fortinet.transip,
-    port: move $event.fortinet.transport,
+    port: move $event.fortinet.transport?,
   }
 }
-drop $event.fortinet.trandisp?
-drop $event.fortinet.transip?
-drop $event.fortinet.transport?
+if $event.fortinet.tranip? != null and $event.fortinet.tranip != 0.0.0.0 {
+  $event.ocsf.dst_endpoint.proxy_endpoint = {
+    ip: move $event.fortinet.tranip,
+    port: move $event.fortinet.tranport?,
+  }
+}
+// Keep trandisp and ineffective translation values as vendor context.
 
 // `app` is the application identified by deep packet inspection.
 if $event.fortinet.app? != null {
@@ -125,12 +117,6 @@ if $event.fortinet.utmref? != null {
   $event.ocsf.metadata.correlation_uid = (move $event.fortinet.utmref).string()
 }
 
-// `osname` is the source device OS as fingerprinted by FortiGate.
-if $event.fortinet.osname? != null {
-  $event.ocsf.src_endpoint.os = {
-    name: move $event.fortinet.osname,
-  }
-}
 
 // Traffic logs always reflect a firewall policy decision.
 $event.ocsf.metadata.profiles = $event.ocsf.metadata.profiles.add("security_control")
@@ -141,8 +127,12 @@ $event.ocsf.metadata.profiles = $event.ocsf.metadata.profiles.add("security_cont
 // (e.g., "policy", "local-in-policy", "multicast-policy", "sniffer").
 $event.ocsf.firewall_rule = {
   uid: move $event.fortinet.poluuid?,
-  name: (move $event.fortinet.policyid).string(),
-  type: move $event.fortinet.policytype,
+  name: $event.fortinet.policyid?.string(),
+  type: move $event.fortinet.policytype?,
+}
+
+if $event.fortinet.policyname? == null {
+  drop $event.fortinet.policyid?
 }
 
 // Normalize the firewall decision. `utmaction` is the UTM/IPS outcome and
@@ -186,3 +176,30 @@ if $event.fortinet.applist? != null {
 // `crscore`/`crlevel` are the composite UTM risk score and level, and
 // `apprisk` the application-control rating for `app`.
 fortinet::fortigate::ocsf::risk event=$event
+
+if $event.fortinet.policyname? != null {
+  $event.ocsf.firewall_rule.name = (move $event.fortinet.policyname).string()
+}
+if $event.fortinet.comment? != null {
+  $event.ocsf.firewall_rule.desc = (move $event.fortinet.comment).string()
+}
+
+// Packet deltas and duration belong to the same observation interval as byte deltas.
+if $event.fortinet.sentpktdelta? != null {
+  $event.ocsf.traffic.packets_out = move $event.fortinet.sentpktdelta
+}
+if $event.fortinet.rcvdpktdelta? != null {
+  $event.ocsf.traffic.packets_in = move $event.fortinet.rcvdpktdelta
+}
+if $event.fortinet.durationdelta? != null {
+  $event.ocsf.traffic.timespan.duration = (move $event.fortinet.durationdelta).seconds().count_milliseconds().round()
+  $event.ocsf.traffic.end_time = $event.ocsf.time
+  $event.ocsf.traffic.start_time = $event.ocsf.time - $event.ocsf.traffic.timespan.duration.milliseconds()
+}
+if $event.fortinet.url? != null {
+  $event.ocsf.url = {
+    path: (move $event.fortinet.url).string(),
+    hostname: (move $event.fortinet.hostname?).string(),
+    scheme: (move $event.fortinet.scheme?).string(),
+  }
+}

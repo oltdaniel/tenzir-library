@@ -25,7 +25,9 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
-$event.ocsf.dst_endpoint.hostname = (move $event.fortinet.hostname).string()
+if $event.ocsf.dst_endpoint.hostname? == null and $event.fortinet.hostname? != null {
+  $event.ocsf.dst_endpoint.hostname = $event.fortinet.hostname.string()
+}
 
 fortinet::fortigate::ocsf::connection_info event=$event
 
@@ -40,7 +42,7 @@ if $event.fortinet.app? != null {
 // non-HTTP applications app control also matches.
 if $event.fortinet.url? != null {
   $event.ocsf.url = {
-    hostname: $event.ocsf.dst_endpoint.hostname?,
+    hostname: (move $event.fortinet.hostname?).string() else $event.ocsf.dst_endpoint.hostname?,
     path: move $event.fortinet.url,
   }
 }
@@ -75,3 +77,5 @@ if $event.fortinet.applist? != null {
 if $event.fortinet.action? != null {
   $event.ocsf.disposition_id = fortinet::$disposition_ids[move $event.fortinet.action]? else 0
 }
+
+fortinet::fortigate::ocsf::tls event=$event

@@ -30,7 +30,7 @@ fortinet::fortigate::ocsf::network_endpoints event=$event
 // host; ASIM reads the owner as DstUsername.
 if $event.fortinet.login? != null {
   $event.ocsf.dst_endpoint.owner = {
-    name: move $event.fortinet.login,
+    name: (move $event.fortinet.login).string(),
   }
 }
 

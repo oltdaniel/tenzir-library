@@ -1,0 +1,16 @@
+from_file f"{env("TENZIR_INPUTS")}/traffic_forward_passive_users.txt" {
+  read_lines
+}
+fortinet = line.parse_kv()
+fortinet::fortigate::ocsf::normalize fortinet, into=ocsf
+this = ocsf
+ocsf_derive
+ocsf_cast
+assert src_endpoint.hostname == "12345" and dst_endpoint.hostname == "10.0.0.9"
+assert src_endpoint.owner.name == "10001" and dst_endpoint.owner.name == "20002"
+assert unmapped.unauthusersource == "kerberos" and unmapped.dstunauthusersource == "ldap"
+microsoft::sentinel::map
+assert SrcUsername == "10001" and DstUsername == "20002"
+assert AdditionalFields.ocsf_unmapped.unauthuser == 10001
+assert AdditionalFields.ocsf_unmapped.dstunauthuser == 20002
+select EventSchema, SrcUsername, DstUsername, SrcFQDN, DstFQDN

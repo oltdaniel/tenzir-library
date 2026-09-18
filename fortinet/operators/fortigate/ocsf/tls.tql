@@ -1,0 +1,40 @@
+---
+description: Map FortiGate TLS and server certificate details without inferring missing values.
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+if $event.fortinet.tlsver? != null {
+  $event.ocsf.tls.version = (move $event.fortinet.tlsver).string()
+}
+if $event.fortinet.cipher? != null {
+  $event.ocsf.tls.cipher = (move $event.fortinet.cipher).string()
+}
+if $event.fortinet.sni? != null {
+  $event.ocsf.tls.sni = (move $event.fortinet.sni).string()
+}
+if $event.fortinet.scertcname? != null {
+  $event.ocsf.tls.certificate.subject = (move $event.fortinet.scertcname).string()
+}
+if $event.fortinet.scertissuer? != null {
+  $event.ocsf.tls.certificate.issuer = (move $event.fortinet.scertissuer).string()
+}
+
+if $event.fortinet.keysize? != null {
+  $event.ocsf.tls.key_length = move $event.fortinet.keysize
+}
+// SSL inspection uses different field names than application control.
+if $event.ocsf.metadata.log_name == "ssl" {
+  if $event.fortinet.cn? != null {
+    $event.ocsf.tls.certificate.subject = (move $event.fortinet.cn).string()
+  }
+  if $event.fortinet.issuer? != null {
+    $event.ocsf.tls.certificate.issuer = (move $event.fortinet.issuer).string()
+  }
+  if $event.fortinet.sn? != null {
+    $event.ocsf.tls.certificate.serial_number = (move $event.fortinet.sn).string()
+  }
+}

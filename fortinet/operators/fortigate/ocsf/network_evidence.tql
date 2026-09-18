@@ -63,26 +63,57 @@ if $event.fortinet.url? != null {
   }
 }
 
-// `agent` is the User-Agent header of the request that carried the payload.
-$event.ocsf._http_request = null
-if $event.fortinet.agent? != null {
-  $event.ocsf._http_request = {
-    user_agent: move $event.fortinet.agent,
+fortinet::fortigate::ocsf::http event=$event
+$event.ocsf._http_request = move $event.ocsf.http_request? else null
+$event.ocsf._http_response = move $event.ocsf.http_response? else null
+
+if $event.fortinet.pathname? != null {
+  $event.ocsf._file.path = (move $event.fortinet.pathname).string()
+}
+
+// External-hash and scan checksums do not identify an algorithm. Preserve
+// their values without claiming SHA-256 merely because a digest has 64 digits.
+if $event.fortinet.filehash? != null {
+  $event.ocsf._file.hashes = ($event.ocsf._file?.hashes? else []).add({
+    algorithm_id: 0,
+    value: (move $event.fortinet.filehash).string(),
+  })
+}
+if $event.fortinet.checksum? != null {
+  $event.ocsf._file.hashes = ($event.ocsf._file?.hashes? else []).add({
+    algorithm_id: 0,
+    value: (move $event.fortinet.checksum).string(),
+  })
+}
+$event.ocsf._email = null
+if $event.fortinet.from? != null or $event.fortinet.to? != null or $event.fortinet.subject? != null or $event.fortinet.messageid? != null {
+  $event.ocsf._email = {
+    from: (move $event.fortinet.from?).string(),
+    subject: (move $event.fortinet.subject?).string(),
+    message_uid: (move $event.fortinet.messageid?).string(),
+  }
+  if $event.fortinet.to? != null {
+    $event.ocsf._email.to = (move $event.fortinet.to).string().split(",")
+  }
+  if $event.fortinet.cc? != null {
+    $event.ocsf._email.cc = (move $event.fortinet.cc).string().split(",")
   }
 }
 
 // Emit evidence when anything above was actually observed. An all-null
 // evidence record is unhelpful, and `drop_null_fields` does not recurse into
 // lists, so the emptiness check has to happen here.
-$event.ocsf._has_evidence = $event.ocsf.src_endpoint.ip? != null or $event.ocsf.dst_endpoint.ip? != null or $event.ocsf._file != null or $event.ocsf._url != null or $event.ocsf._http_request != null
+$event.ocsf._has_evidence = $event.ocsf.src_endpoint.drop_null_fields().keys().length() > 0 or $event.ocsf.dst_endpoint.drop_null_fields().keys().length() > 0 or $event.ocsf._file != null or $event.ocsf._url != null or $event.ocsf._http_request != null or $event.ocsf._http_response != null or $event.ocsf._email != null
 if $event.ocsf._has_evidence {
   $event.ocsf.evidences = [{
     src_endpoint: move $event.ocsf.src_endpoint,
     dst_endpoint: move $event.ocsf.dst_endpoint,
     connection_info: move $event.ocsf.connection_info,
     file: $event.ocsf._file,
+    email: $event.ocsf._email,
     url: $event.ocsf._url,
     http_request: $event.ocsf._http_request,
+    http_response: $event.ocsf._http_response,
   }]
 } else {
   drop $event.ocsf.src_endpoint?
@@ -93,3 +124,5 @@ drop $event.ocsf._has_evidence
 drop $event.ocsf._file
 drop $event.ocsf._url
 drop $event.ocsf._http_request
+drop $event.ocsf._http_response
+drop $event.ocsf._email

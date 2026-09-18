@@ -1,0 +1,28 @@
+---
+description: Derive HTTP activity from the observed request method.
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+if $event.ocsf.http_request.http_method? != null {
+  let $methods = {
+    CONNECT: 1, DELETE: 2, GET: 3, HEAD: 4, OPTIONS: 5,
+    POST: 6, PUT: 7, TRACE: 8, PATCH: 9, ACL: 10,
+    "BASELINE-CONTROL": 11, BIND: 12, CHECKIN: 13, CHECKOUT: 14,
+    COPY: 15, LABEL: 16, LINK: 17, LOCK: 18, MERGE: 19,
+    MKACTIVITY: 20, MKCALENDAR: 21, MKCOL: 22, MKREDIRECTREF: 23,
+    MKWORKSPACE: 24, MOVE: 25, ORDERPATCH: 26, PRI: 27,
+    PROPFIND: 28, PROPPATCH: 29, QUERY: 30, REBIND: 31,
+    REPORT: 32, SEARCH: 33, UNBIND: 34, UNCHECKOUT: 35,
+    UNLINK: 36, UNLOCK: 37, UPDATE: 38, UPDATEREDIRECTREF: 39,
+    "VERSION-CONTROL": 40,
+  }
+  $event.ocsf.activity_id = $methods[$event.ocsf.http_request.http_method]? else 99
+  if $event.ocsf.activity_id == 99 {
+    $event.ocsf.activity_name = $event.ocsf.http_request.http_method
+  }
+  $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
+}

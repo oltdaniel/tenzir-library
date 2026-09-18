@@ -55,7 +55,7 @@ if $event.fortinet.recipient?.string().match_regex("@") == true {
 
 // `service` identifies the email protocol (IMAPS, SMTPS, POP3S).
 // Use move so network_endpoints does not also map it to dst_endpoint.svc_name.
-$event.ocsf.protocol_name = move $event.fortinet.service
+$event.ocsf.protocol_name = move $event.fortinet.service?
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
 
@@ -68,4 +68,12 @@ fortinet::fortigate::ocsf::security_control event=$event
 
 if $event.fortinet.action? != null {
   $event.ocsf.disposition_id = fortinet::$disposition_ids[move $event.fortinet.action]? else 0
+}
+
+if $event.fortinet.messageid? != null {
+  $event.ocsf.email.message_uid = (move $event.fortinet.messageid).string()
+}
+
+if $event.fortinet.cc? != null {
+  $event.ocsf.email.cc = (move $event.fortinet.cc).string().split(",")
 }

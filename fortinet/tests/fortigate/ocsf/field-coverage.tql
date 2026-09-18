@@ -1,0 +1,71 @@
+---
+pre-compare: sort
+---
+
+from_file f"{env("TENZIR_INPUTS")}/*context.txt" {
+  read_lines
+}
+fortinet = line.parse_kv()
+fortinet::fortigate::ocsf::normalize fortinet, into=ocsf
+this = ocsf
+ocsf_derive
+ocsf_cast
+match metadata.log_name {
+  "http-transaction" => {
+    assert class_uid == 4002 and activity_id == 3
+    assert http_request.url.hostname == "www.example.test"
+    assert http_request.url.path == "/report"
+    assert http_request.length == 123
+    assert http_response.length == 456
+    assert http_response.code == 200
+    assert http_response.content_type == "text/html"
+  }
+  "ssl" => {
+    assert tls.version == "TLSv1.3"
+    assert tls.cipher == "TLS_AES_256_GCM_SHA384"
+    assert tls.certificate.serial_number == "123456"
+    assert tls.certificate.issuer == "Example CA"
+    assert tls.certificate.subject == "www.example.test"
+    assert tls.certificate.fingerprints[0].value == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    assert tls.key_length == 2048
+    assert src_endpoint.hostname == "tls-client.example.test"
+  }
+  "dns" => {
+    assert rcode_id == 3
+    assert transaction_id == 57945
+    assert src_endpoint.hostname == "dns-client.example.test"
+    assert src_endpoint.owner.name == "dns-user"
+  }
+  "webfilter" => {
+    assert activity_id == 6
+    assert http_request.http_method == "POST"
+    assert http_request.user_agent == "Browser/1.0"
+    assert http_request.referrer == "https://example.test/start"
+    assert http_request.http_headers[0].value == "192.0.2.1, 192.0.2.2"
+    assert http_response.content_type == "text/html"
+    assert src_endpoint.owner.name == "alice"
+    assert dst_endpoint.owner.name == "web-service"
+  }
+  "virus" => {
+    assert evidences[0].src_endpoint.hostname == "virus-client.example.test"
+    assert evidences[0].src_endpoint.owner.name == "alice"
+    assert evidences[0].dst_endpoint.owner.name == "repository"
+    assert evidences[0].file.path == "/downloads/malware.exe"
+    assert evidences[0].http_request.http_method == "GET"
+    assert evidences[0].email.message_uid == "<payload@example.test>"
+    assert evidences[0].email.to.length() == 2
+    assert evidences[0].file.hashes.length() == 3
+  }
+  "cifs" => {
+    assert share == "documents"
+    assert file.path == "/documents/report.pdf"
+    assert dst_endpoint.owner.name == "file-service"
+  }
+  "emailfilter" => {
+    assert email.message_uid == "<message@example.test>"
+    assert email.cc.length() == 2
+    assert src_endpoint.hostname == "mail-client.example.test"
+  }
+  _ => {}
+}
+select family=metadata.log_name, class_uid, type_uid

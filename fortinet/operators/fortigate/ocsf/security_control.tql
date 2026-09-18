@@ -25,3 +25,14 @@ if $event.fortinet.policyid? != null {
     uid: (move $event.fortinet.policyid).string(),
   }
 }
+
+if $event.fortinet.policyname? != null {
+  $event.ocsf.firewall_rule.name = (move $event.fortinet.policyname).string()
+}
+if $event.fortinet.policytype? != null {
+  $event.ocsf.firewall_rule.type = (move $event.fortinet.policytype).string()
+}
+
+if $event.fortinet.poluuid? != null and $event.ocsf.firewall_rule?.uid? == null {
+  $event.ocsf.firewall_rule.uid = (move $event.fortinet.poluuid).string()
+}

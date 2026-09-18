@@ -47,13 +47,13 @@ if $event.fortinet.dstuuid? != null {
   $event.ocsf.dst_endpoint.uid = move $event.fortinet.dstuuid
 }
 
-// `mastersrcmac` is the MAC of the device that originated the session when
-// FortiGate sees it behind a NAT-ing device; `srcmac` is the MAC of the
-// immediate previous hop. Prefer the originator, since that is the host the
-// event is actually about, and only fall back to the hop when it is absent.
+// `mastersrcmac` identifies a host with multiple network interfaces. Prefer
+// it for host correlation; retain a different interface MAC in unmapped.
 if $event.fortinet.mastersrcmac? != null {
   $event.ocsf.src_endpoint.mac = move $event.fortinet.mastersrcmac
-  drop $event.fortinet.srcmac?
+  if $event.fortinet.srcmac? == $event.ocsf.src_endpoint.mac {
+    drop $event.fortinet.srcmac
+  }
 } else if $event.fortinet.srcmac? != null {
   $event.ocsf.src_endpoint.mac = move $event.fortinet.srcmac?
 }
@@ -75,3 +75,87 @@ if $event.fortinet.devtype? != null {
 // - `srcserver` is a 0/1 flag marking whether the source acted as the server
 //   side of the session. It qualifies the endpoint rather than describing it,
 //   and the OCSF endpoint object has no slot for that.
+
+// Endpoint names identify hosts, including names that parse_kv types as IPs
+// or numbers. Keep authentication identities on their respective endpoints.
+if $event.fortinet.srcname? != null {
+  $event.ocsf.src_endpoint.hostname = (move $event.fortinet.srcname).string()
+}
+if $event.fortinet.dstname? != null {
+  $event.ocsf.dst_endpoint.hostname = (move $event.fortinet.dstname).string()
+}
+if $event.fortinet.srcdomain? != null {
+  $event.ocsf.src_endpoint.domain = (move $event.fortinet.srcdomain).string()
+}
+if $event.fortinet.srcmacvendor? != null {
+  $event.ocsf.src_endpoint.mac_vendor = (move $event.fortinet.srcmacvendor).string()
+}
+if $event.fortinet.srccity? != null {
+  $event.ocsf.src_endpoint.location.city = (move $event.fortinet.srccity).string()
+}
+if $event.fortinet.srcregion? != null {
+  $event.ocsf.src_endpoint.location.region = (move $event.fortinet.srcregion).string()
+}
+if $event.fortinet.dstcity? != null {
+  $event.ocsf.dst_endpoint.location.city = (move $event.fortinet.dstcity).string()
+}
+if $event.fortinet.dstregion? != null {
+  $event.ocsf.dst_endpoint.location.region = (move $event.fortinet.dstregion).string()
+}
+if $event.fortinet.osname? != null {
+  $event.ocsf.src_endpoint.os.name = (move $event.fortinet.osname).string()
+}
+if $event.fortinet.srcswversion? != null {
+  $event.ocsf.src_endpoint.os.version = (move $event.fortinet.srcswversion).string()
+}
+if $event.fortinet.dstosname? != null {
+  $event.ocsf.dst_endpoint.os.name = (move $event.fortinet.dstosname).string()
+}
+if $event.fortinet.dstswversion? != null {
+  $event.ocsf.dst_endpoint.os.version = (move $event.fortinet.dstswversion).string()
+}
+if $event.fortinet.srchwvendor? != null {
+  $event.ocsf.src_endpoint.hw_info.vendor_name = (move $event.fortinet.srchwvendor).string()
+}
+if $event.fortinet.dsthwvendor? != null {
+  $event.ocsf.dst_endpoint.hw_info.vendor_name = (move $event.fortinet.dsthwvendor).string()
+}
+if $event.fortinet.dstdevtype? != null {
+  $event.ocsf.dst_endpoint.type = (move $event.fortinet.dstdevtype).string()
+}
+if $event.fortinet.srcinetsvc? != null {
+  $event.ocsf.src_endpoint.svc_name = (move $event.fortinet.srcinetsvc).string()
+}
+if $event.fortinet.dstinetsvc? != null {
+  $event.ocsf.dst_endpoint.svc_name = (move $event.fortinet.dstinetsvc).string()
+}
+if $event.fortinet.user? != null {
+  $event.ocsf.src_endpoint.owner.name = (move $event.fortinet.user).string()
+}
+if $event.fortinet.dstuser? != null {
+  $event.ocsf.dst_endpoint.owner.name = (move $event.fortinet.dstuser).string()
+}
+
+if $event.fortinet.group? != null {
+  $event.ocsf.src_endpoint.owner.groups = [{name: (move $event.fortinet.group).string()}]
+}
+// Master MAC identifies the host across its interfaces. Retain a differing
+// interface MAC in unmapped instead of discarding it.
+if $event.fortinet.masterdstmac? != null {
+  $event.ocsf.dst_endpoint.mac = (move $event.fortinet.masterdstmac).string()
+  if $event.fortinet.dstmac? == $event.ocsf.dst_endpoint.mac {
+    drop $event.fortinet.dstmac
+  }
+} else if $event.fortinet.dstmac? != null {
+  $event.ocsf.dst_endpoint.mac = (move $event.fortinet.dstmac).string()
+}
+
+// Passive identity discovery is useful even without firewall authentication.
+// An authenticated name wins. Copy rather than move the fallback so unmapped
+// preserves its unauthenticated provenance and the discovery-method fields.
+if $event.ocsf.src_endpoint?.owner?.name? == null and $event.fortinet.unauthuser? != null {
+  $event.ocsf.src_endpoint.owner.name = $event.fortinet.unauthuser.string()
+}
+if $event.ocsf.dst_endpoint?.owner?.name? == null and $event.fortinet.dstunauthuser? != null {
+  $event.ocsf.dst_endpoint.owner.name = $event.fortinet.dstunauthuser.string()
+}

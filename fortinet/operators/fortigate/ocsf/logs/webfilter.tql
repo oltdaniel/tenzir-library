@@ -9,10 +9,10 @@ args:
 
 @name = "ocsf.http_activity"
 
-// Web filter logs report a URL access attempt; the HTTP method is unknown.
+// Web filter logs report a URL access attempt; some carry `httpmethod`.
 $event.ocsf.category_uid = 4
 $event.ocsf.class_uid = 4002
-$event.ocsf.activity_id = 0  // Unknown: FortiGate doesn't log the HTTP verb here
+$event.ocsf.activity_id = 0  // Unknown unless httpmethod is available below
 $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 
 drop $event.fortinet.eventtype
@@ -20,14 +20,16 @@ drop $event.fortinet.eventtype
 fortinet::fortigate::ocsf::network_endpoints event=$event
 // `hostname` is the virtual host name of the requested site. It is the Host
 // header, so it can be a bare address, which `parse_kv` types as an `ip`.
-$event.ocsf.dst_endpoint.hostname = (move $event.fortinet.hostname).string()
+if $event.ocsf.dst_endpoint.hostname? == null and $event.fortinet.hostname? != null {
+  $event.ocsf.dst_endpoint.hostname = $event.fortinet.hostname.string()
+}
 
 fortinet::fortigate::ocsf::connection_info event=$event
 
 // `url` is the path; `hostname` (already mapped above) is the host.
 $event.ocsf.http_request = {
   url: {
-    hostname: $event.ocsf.dst_endpoint.hostname,
+    hostname: (move $event.fortinet.hostname?).string() else $event.ocsf.dst_endpoint.hostname?,
     path: move $event.fortinet.url,
   },
 }
@@ -48,11 +50,11 @@ $event.ocsf.http_request = {
 // - `reqtype` ("direct" or "referral") says whether the user navigated to the
 //   site directly or followed a link. OCSF models the referrer as a URL in
 //   `http_request.referrer`, not as a navigation kind, and FortiOS does not log
-//   the referring URL itself.
+//   the referring URL in reqtype; referralurl is mapped separately.
 
 $event.ocsf.traffic = {
-  bytes_in: move $event.fortinet.rcvdbyte,
-  bytes_out: move $event.fortinet.sentbyte,
+  bytes_in: move $event.fortinet.rcvdbyte?,
+  bytes_out: move $event.fortinet.sentbyte?,
 }
 
 // Web filter is a security control: it evaluated and acted on the request.
@@ -64,3 +66,6 @@ if $event.fortinet.action? != null {
 
 // `crscore`/`crlevel` are the composite UTM risk score and level.
 fortinet::fortigate::ocsf::risk event=$event
+
+fortinet::fortigate::ocsf::http event=$event
+fortinet::fortigate::ocsf::http_activity event=$event

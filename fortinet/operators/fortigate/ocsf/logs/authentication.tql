@@ -41,13 +41,13 @@ if $event.fortinet.profile? != null {
 }
 
 $event.ocsf.src_endpoint = {
-  ip: move $event.fortinet.srcip,
+  ip: move $event.fortinet.srcip?,
   // event/user: `interface` is the ingress network interface.
   interface_name: move $event.fortinet.interface?,
 }
 
 $event.ocsf.dst_endpoint = {
-  ip: move $event.fortinet.dstip,
+  ip: move $event.fortinet.dstip?,
 }
 
 // Both events involve a remote authentication attempt.
@@ -84,4 +84,10 @@ if $event.fortinet.policyid? != null {
   $event.ocsf.firewall_rule = {
     uid: (move $event.fortinet.policyid).string(),
   }
+}
+
+fortinet::fortigate::ocsf::endpoint_context event=$event
+
+if $event.fortinet.reason? != null {
+  $event.ocsf.status_code = (move $event.fortinet.reason).string()
 }

@@ -1,0 +1,7 @@
+{
+  EventSchema: "NetworkSession",
+  SrcUsername: "10001",
+  DstUsername: "20002",
+  SrcFQDN: "12345",
+  DstFQDN: "10.0.0.9",
+}

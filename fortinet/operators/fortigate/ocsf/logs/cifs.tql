@@ -28,8 +28,8 @@ fortinet::fortigate::ocsf::connection_info event=$event
 // (regular file, folder, symbolic link). Writing the format into that field
 // would assert something the enum does not mean.
 $event.ocsf.file = {
-  name: move $event.fortinet.filename,
-  size: move $event.fortinet.filesize,
+  name: (move $event.fortinet.filename?).string(),
+  size: move $event.fortinet.filesize?,
 }
 
 fortinet::fortigate::ocsf::security_control event=$event
@@ -46,4 +46,11 @@ if $event.fortinet.filtername? != null {
 
 if $event.fortinet.action? != null {
   $event.ocsf.disposition_id = fortinet::$disposition_ids[move $event.fortinet.action]? else 0
+}
+
+if $event.fortinet.sharename? != null {
+  $event.ocsf.share = (move $event.fortinet.sharename).string()
+}
+if $event.fortinet.pathname? != null {
+  $event.ocsf.file.path = (move $event.fortinet.pathname).string()
 }

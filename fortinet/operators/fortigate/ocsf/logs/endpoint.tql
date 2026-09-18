@@ -46,3 +46,5 @@ if $event.fortinet.fctuid? != null {
 if $event.fortinet.status? != null {
   $event.ocsf.status_id = fortinet::$statuses[move $event.fortinet.status]? else 0
 }
+
+fortinet::fortigate::ocsf::endpoint_context event=$event

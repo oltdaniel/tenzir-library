@@ -1,0 +1,40 @@
+{
+  family: "forward",
+  class_uid: 4001,
+  type_uid: 400102,
+}
+{
+  family: "webfilter",
+  class_uid: 4002,
+  type_uid: 400206,
+}
+{
+  family: "ssl",
+  class_uid: 4001,
+  type_uid: 400106,
+}
+{
+  family: "dns",
+  class_uid: 4003,
+  type_uid: 400302,
+}
+{
+  family: "virus",
+  class_uid: 2004,
+  type_uid: 200401,
+}
+{
+  family: "cifs",
+  class_uid: 4006,
+  type_uid: 400602,
+}
+{
+  family: "emailfilter",
+  class_uid: 4009,
+  type_uid: 400903,
+}
+{
+  family: "http-transaction",
+  class_uid: 4002,
+  type_uid: 400203,
+}

@@ -65,7 +65,7 @@ if $event.ocsf.src_endpoint.ip? != null or $event.ocsf.dst_endpoint.ip? != null 
 // "DoS-policy"); extend firewall_rule after the common UDO sets uid.
 fortinet::fortigate::ocsf::security_control event=$event
 if $event.fortinet.policytype? != null {
-  $event.ocsf.firewall_rule.type = move $event.fortinet.policytype
+  $event.ocsf.firewall_rule.type = move $event.fortinet.policytype?
 }
 
 if $event.fortinet.action? != null {

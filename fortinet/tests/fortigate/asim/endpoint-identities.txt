@@ -1,0 +1,9 @@
+{
+  EventSchema: "NetworkSession",
+  SrcUsername: "12345",
+  DstUsername: "service-user",
+  SrcFQDN: "workstation.example.test",
+  DstFQDN: "server.example.test",
+  SrcNatIpAddr: 10.1.100.11,
+  DstNatIpAddr: 10.2.0.10,
+}

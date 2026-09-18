@@ -3,8 +3,8 @@ description: >-
   Common FortiGate src/dst endpoint fields → OCSF network endpoints.
   Sets ip, port, interface_name, and zone (from intfrole) on both endpoints.
   Conditionally sets dst_endpoint.svc_name from `service` if present, then
-  applies the shared endpoint context (geo, UUIDs, MAC, device type).
-  Callers may extend endpoints further (e.g. hostname, login).
+  applies shared hostnames, identity, geography, MAC, and device context.
+  Callers may extend endpoints further with protocol-specific context.
 args:
   named:
     - name: event
@@ -13,9 +13,9 @@ args:
 ---
 
 $event.ocsf.src_endpoint = {
-  ip: move $event.fortinet.srcip,
+  ip: move $event.fortinet.srcip?,
   port: move $event.fortinet.srcport?,
-  interface_name: move $event.fortinet.srcintf,
+  interface_name: move $event.fortinet.srcintf?,
 }
 if $event.fortinet.srcintfrole? != null {
   $event.ocsf.src_endpoint.zone = $event.fortinet.srcintfrole
@@ -23,7 +23,7 @@ if $event.fortinet.srcintfrole? != null {
 drop $event.fortinet.srcintfrole?
 
 $event.ocsf.dst_endpoint = {
-  ip: move $event.fortinet.dstip,
+  ip: move $event.fortinet.dstip?,
   port: move $event.fortinet.dstport?,
   interface_name: move $event.fortinet.dstintf?,
 }
@@ -34,7 +34,7 @@ drop $event.fortinet.dstintfrole?
 
 // `service` is the application-layer protocol name for the destination port.
 if $event.fortinet.service? != null {
-  $event.ocsf.dst_endpoint.svc_name = move $event.fortinet.service
+  $event.ocsf.dst_endpoint.svc_name = move $event.fortinet.service?
 }
 
 // Geo location, address-object UUIDs, originator MAC, and device fingerprint.

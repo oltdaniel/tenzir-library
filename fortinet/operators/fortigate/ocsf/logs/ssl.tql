@@ -51,3 +51,5 @@ fortinet::fortigate::ocsf::security_control event=$event
 if $event.fortinet.action? != null {
   $event.ocsf.disposition_id = fortinet::$disposition_ids[move $event.fortinet.action]? else 0
 }
+
+fortinet::fortigate::ocsf::tls event=$event

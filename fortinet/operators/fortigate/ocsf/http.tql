@@ -1,0 +1,43 @@
+---
+description: Map HTTP request and response details for HTTP events and detection evidence.
+args:
+  named:
+    - name: event
+      description: The field that holds the event to map.
+      type: field
+---
+
+if $event.fortinet.agent? != null {
+  $event.ocsf.http_request.user_agent = (move $event.fortinet.agent).string()
+}
+if $event.fortinet.referralurl? != null {
+  $event.ocsf.http_request.referrer = (move $event.fortinet.referralurl).string()
+}
+if $event.fortinet.httpmethod? != null {
+  $event.ocsf.http_request.http_method = (move $event.fortinet.httpmethod).string().to_upper()
+}
+if $event.fortinet.contenttype? != null {
+  $event.ocsf.http_response.content_type = (move $event.fortinet.contenttype).string()
+}
+if $event.fortinet.resptype? != null {
+  $event.ocsf.http_response.content_type = (move $event.fortinet.resptype).string()
+}
+if $event.fortinet.reqlength? != null {
+  $event.ocsf.http_request.length = (move $event.fortinet.reqlength).int()
+}
+if $event.fortinet.resplength? != null {
+  $event.ocsf.http_response.length = (move $event.fortinet.resplength).int()
+}
+if $event.fortinet.statuscode? != null {
+  $event.ocsf.http_response.code = (move $event.fortinet.statuscode).int()
+}
+if $event.fortinet.forwardedfor? != null {
+  $event.ocsf.http_request.http_headers = ($event.ocsf.http_request?.http_headers? else []).add({
+    name: "X-Forwarded-For", value: (move $event.fortinet.forwardedfor).string(),
+  })
+}
+if $event.fortinet.trueclntip? != null {
+  $event.ocsf.http_request.http_headers = ($event.ocsf.http_request?.http_headers? else []).add({
+    name: "True-Client-IP", value: (move $event.fortinet.trueclntip).string(),
+  })
+}
