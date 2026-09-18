@@ -21,6 +21,12 @@ drop $event.fortinet.eventtype
 fortinet::fortigate::ocsf::network_endpoints event=$event
 fortinet::fortigate::ocsf::connection_info event=$event
 
+// CIFS is the application protocol of this SMB activity, rather than an
+// endpoint service name duplicated from the same FortiGate field.
+if $event.fortinet.service? != null {
+  $event.ocsf.app_protocol_name = move $event.fortinet.service
+}
+
 // `filename` and `filesize` describe the file being transferred.
 //
 // `filetype` stays in `unmapped`: FortiOS reports a file *format* there

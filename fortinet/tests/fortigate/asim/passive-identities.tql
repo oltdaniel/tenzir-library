@@ -11,6 +11,6 @@ assert src_endpoint.owner.name == "10001" and dst_endpoint.owner.name == "20002"
 assert unmapped.unauthusersource == "kerberos" and unmapped.dstunauthusersource == "ldap"
 microsoft::sentinel::map
 assert SrcUsername == "10001" and DstUsername == "20002"
-assert AdditionalFields.ocsf_unmapped.unauthuser == 10001
-assert AdditionalFields.ocsf_unmapped.dstunauthuser == 20002
+assert AdditionalFields.ocsf_unmapped.unauthuser? == null
+assert AdditionalFields.ocsf_unmapped.dstunauthuser? == null
 select EventSchema, SrcUsername, DstUsername, SrcFQDN, DstFQDN

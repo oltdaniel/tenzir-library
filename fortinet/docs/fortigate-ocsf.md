@@ -57,7 +57,9 @@ CommonSecurityLog, with every field the device reported preserved in
 ## Shared behaviour
 
 These run for most or all log families, so a field they consume will not appear
-in a family's own table below.
+in a family's own table below. After class mapping, `cleanup.tql` removes source
+fields that have an OCSF owner; Base Event deliberately retains source fields
+because it has no normalized owner for appliance telemetry.
 
 ### `ocsf/map.tql` — envelope
 
@@ -83,7 +85,7 @@ in a family's own table below.
 | `srcip`/`dstip`, `srcport`/`dstport` | `src_endpoint.ip`/`port`, `dst_endpoint.ip`/`port` | |
 | `srcintf`/`dstintf` | `*.interface_name` | |
 | `srcintfrole`/`dstintfrole` | `*.zone` | `wan`, `lan`, `dmz`. Also drives session direction. |
-| `service` | `dst_endpoint.svc_name` | The application-layer protocol for the destination port. |
+| `service` | Class-specific application protocol field | Network/HTTP/SMB/SSH classes use `app_protocol_name`; email uses `protocol_name`. It is not also copied to `dst_endpoint.svc_name`. |
 | `srccountry`/`dstcountry` | `*.location.country` | FortiOS emits English country **names**, not ISO 3166-1 alpha-2 codes. The name is kept verbatim because ASIM's `SrcGeoCountry`/`DstGeoCountry` expect names, so converting to a code would force a reverse lookup one hop later. `"Reserved"` is FortiOS's placeholder for RFC 1918, loopback, and multicast addresses; it is not a country and is dropped. |
 | `srcuuid`/`dstuuid` | `*.uid` | UUIDs of the matched firewall **address objects**, not of the hosts. |
 | `mastersrcmac`, else `srcmac`; `masterdstmac`, else `dstmac` | `*.mac` | The master MAC identifies a host with multiple interfaces. A different interface MAC stays in `unmapped`. |

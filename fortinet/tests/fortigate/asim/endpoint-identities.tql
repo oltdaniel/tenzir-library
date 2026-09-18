@@ -25,11 +25,11 @@ assert dst_endpoint.proxy_endpoint.ip == 10.2.0.10
 assert traffic.packets_out == 3 and traffic.packets_in == 4
 assert traffic.timespan.duration == 5000
 assert firewall_rule.name == "Employee Internet"
-assert unmapped.policyid == 1
-assert unmapped.unauthuser == "passive-source"
-assert unmapped.dstunauthuser == "passive-destination"
-assert unmapped.srcmac == "00:11:22:33:44:55"
-assert unmapped.dstmac == "00:aa:bb:cc:dd:ee"
+assert unmapped.policyid? == null
+assert unmapped.unauthuser? == null
+assert unmapped.dstunauthuser? == null
+assert unmapped.srcmac? == null
+assert unmapped.dstmac? == null
 microsoft::sentinel::map
 assert SrcUsername == "12345" and DstUsername == "service-user"
 assert SrcFQDN == "workstation.example.test" and DstFQDN == "server.example.test"

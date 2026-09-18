@@ -24,6 +24,10 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 fortinet::fortigate::ocsf::network_endpoints event=$event
 fortinet::fortigate::ocsf::connection_info event=$event
 
+if $event.fortinet.service? != null {
+  $event.ocsf.app_protocol_name = move $event.fortinet.service
+}
+
 // `reason` is the specific SSL inspection verdict (e.g. block-cert-invalid).
 if $event.fortinet.reason? != null {
   $event.ocsf.status_detail = move $event.fortinet.reason

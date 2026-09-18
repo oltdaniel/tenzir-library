@@ -1,0 +1,203 @@
+---
+description: Remove FortiGate fields already represented by the OCSF event.
+args:
+  named:
+    - name: event
+      description: The field holding the in-progress FortiGate/OCSF event.
+      type: field
+---
+
+// Envelope fields are normalized for every FortiGate record.
+drop $event.fortinet.date?
+drop $event.fortinet.time?
+drop $event.fortinet.tz?
+drop $event.fortinet.eventtime?
+drop $event.fortinet.logid?
+drop $event.fortinet.type?
+drop $event.fortinet.subtype?
+drop $event.fortinet.level?
+drop $event.fortinet.msg?
+drop $event.fortinet.logdesc?
+drop $event.fortinet.severity?
+drop $event.fortinet.devname?
+drop $event.fortinet.devid?
+drop $event.fortinet.vd?
+
+// Endpoint context is shared by mapped classes. Base Event intentionally keeps
+// all source fields because it has no normalized ownership for them.
+if $event.ocsf.class_uid != 0 {
+drop $event.fortinet.srcip?
+drop $event.fortinet.srcport?
+drop $event.fortinet.srcintf?
+drop $event.fortinet.srcintfrole?
+drop $event.fortinet.dstip?
+drop $event.fortinet.dstport?
+drop $event.fortinet.dstintf?
+drop $event.fortinet.dstintfrole?
+drop $event.fortinet.srcname?
+drop $event.fortinet.dstname?
+drop $event.fortinet.srcdomain?
+drop $event.fortinet.srccountry?
+drop $event.fortinet.dstcountry?
+drop $event.fortinet.srcuuid?
+drop $event.fortinet.dstuuid?
+drop $event.fortinet.srcmac?
+drop $event.fortinet.dstmac?
+drop $event.fortinet.mastersrcmac?
+drop $event.fortinet.masterdstmac?
+drop $event.fortinet.srcmacvendor?
+drop $event.fortinet.srccity?
+drop $event.fortinet.srcregion?
+drop $event.fortinet.dstcity?
+drop $event.fortinet.dstregion?
+drop $event.fortinet.osname?
+drop $event.fortinet.srcswversion?
+drop $event.fortinet.dstosname?
+drop $event.fortinet.dstswversion?
+drop $event.fortinet.srchwvendor?
+drop $event.fortinet.dsthwvendor?
+drop $event.fortinet.devtype?
+drop $event.fortinet.dstdevtype?
+drop $event.fortinet.srcinetsvc?
+drop $event.fortinet.dstinetsvc?
+drop $event.fortinet.user?
+drop $event.fortinet.dstuser?
+drop $event.fortinet.group?
+drop $event.fortinet.unauthuser?
+drop $event.fortinet.dstunauthuser?
+
+}
+
+// Connection and policy context are represented by OCSF objects.
+if $event.ocsf.class_uid != 0 {
+drop $event.fortinet.proto?
+drop $event.fortinet.sessionid?
+drop $event.fortinet.srczone?
+drop $event.fortinet.dstzone?
+drop $event.fortinet.profile?
+drop $event.fortinet.policyid?
+drop $event.fortinet.policyname?
+drop $event.fortinet.policytype?
+  drop $event.fortinet.poluuid?
+}
+
+if $event.ocsf.metadata.type? == "traffic" {
+  drop $event.fortinet.action?
+  drop $event.fortinet.utmaction?
+  drop $event.fortinet.service?
+  drop $event.fortinet.duration?
+  drop $event.fortinet.durationdelta?
+  drop $event.fortinet.sentbyte?
+  drop $event.fortinet.rcvdbyte?
+  drop $event.fortinet.sentpkt?
+  drop $event.fortinet.rcvdpkt?
+  drop $event.fortinet.sentdelta?
+  drop $event.fortinet.rcvddelta?
+  drop $event.fortinet.sentpktdelta?
+  drop $event.fortinet.rcvdpktdelta?
+  drop $event.fortinet.trandisp?
+  drop $event.fortinet.transip?
+  drop $event.fortinet.transport?
+  drop $event.fortinet.tranip?
+  drop $event.fortinet.tranport?
+  drop $event.fortinet.app?
+  drop $event.fortinet.applist?
+  drop $event.fortinet.apprisk?
+  drop $event.fortinet.crscore?
+  drop $event.fortinet.crlevel?
+  drop $event.fortinet.utmref?
+  drop $event.fortinet.url?
+  drop $event.fortinet.hostname?
+  drop $event.fortinet.scheme?
+  drop $event.fortinet.comment?
+} else if $event.ocsf.metadata.type? == "utm" {
+  drop $event.fortinet.eventtype?
+  drop $event.fortinet.action?
+  drop $event.fortinet.profile?
+  drop $event.fortinet.policyid?
+  drop $event.fortinet.poluuid?
+  drop $event.fortinet.crscore?
+  drop $event.fortinet.crlevel?
+  drop $event.fortinet.apprisk?
+  if $event.ocsf.metadata.log_name? == "dns" {
+    drop $event.fortinet.qname?
+    drop $event.fortinet.qclass?
+    drop $event.fortinet.qtype?
+    drop $event.fortinet.xid?
+    drop $event.fortinet.ipaddr?
+    drop $event.fortinet.rcode?
+  } else if $event.ocsf.metadata.log_name? == "webfilter" {
+    drop $event.fortinet.hostname?
+    drop $event.fortinet.url?
+    drop $event.fortinet.rcvdbyte?
+    drop $event.fortinet.sentbyte?
+    drop $event.fortinet.agent?
+    drop $event.fortinet.referralurl?
+    drop $event.fortinet.httpmethod?
+    drop $event.fortinet.contenttype?
+    drop $event.fortinet.resptype?
+    drop $event.fortinet.forwardedfor?
+    drop $event.fortinet.trueclntip?
+    drop $event.fortinet.statuscode?
+  } else if $event.ocsf.metadata.log_name? == "app-ctrl" {
+    drop $event.fortinet.hostname?
+    drop $event.fortinet.url?
+    drop $event.fortinet.app?
+    drop $event.fortinet.applist?
+    drop $event.fortinet.scertcname?
+    drop $event.fortinet.scertissuer?
+    drop $event.fortinet.incidentserialno?
+  } else if $event.ocsf.metadata.log_name? == "ssl" {
+    drop $event.fortinet.reason?
+    drop $event.fortinet.certhash?
+    drop $event.fortinet.tlsver?
+    drop $event.fortinet.cipher?
+    drop $event.fortinet.sni?
+    drop $event.fortinet.keysize?
+    drop $event.fortinet.cn?
+    drop $event.fortinet.issuer?
+    drop $event.fortinet.sn?
+  } else if $event.ocsf.metadata.log_name? == "cifs" {
+    drop $event.fortinet.filename?
+    drop $event.fortinet.filesize?
+    drop $event.fortinet.pathname?
+    drop $event.fortinet.sharename?
+    drop $event.fortinet.filtername?
+  } else if $event.ocsf.metadata.log_name? == "ssh" {
+    drop $event.fortinet.login?
+  } else if $event.ocsf.metadata.log_name? == "emailfilter" {
+    drop $event.fortinet.direction?
+    drop $event.fortinet.from?
+    drop $event.fortinet.to?
+    drop $event.fortinet.cc?
+    drop $event.fortinet.subject?
+    drop $event.fortinet.size?
+    drop $event.fortinet.recipient?
+    drop $event.fortinet.service?
+    drop $event.fortinet.messageid?
+  } else if $event.ocsf.metadata.log_name? in ["ips", "anomaly", "virus", "dlp"] {
+    drop $event.fortinet.attack?
+    drop $event.fortinet.attackid?
+    drop $event.fortinet.incidentserialno?
+    drop $event.fortinet.ref?
+    drop $event.fortinet.count?
+    drop $event.fortinet.filename?
+    drop $event.fortinet.filesize?
+    drop $event.fortinet.pathname?
+    drop $event.fortinet.filehash?
+    drop $event.fortinet.checksum?
+    drop $event.fortinet.analyticscksum?
+    drop $event.fortinet.from?
+    drop $event.fortinet.to?
+    drop $event.fortinet.cc?
+    drop $event.fortinet.subject?
+    drop $event.fortinet.messageid?
+    drop $event.fortinet.agent?
+    drop $event.fortinet.httpmethod?
+    drop $event.fortinet.referralurl?
+    drop $event.fortinet.filteridx?
+    drop $event.fortinet.dlpextra?
+    drop $event.fortinet.filtertype?
+    drop $event.fortinet.quarskip?
+  }
+}

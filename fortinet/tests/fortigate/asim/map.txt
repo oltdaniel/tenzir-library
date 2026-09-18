@@ -262,12 +262,10 @@
   DvcZone: "vdom1",
   SrcIpAddr: 10.1.100.66,
   SrcHostname: "tls-client.example.test",
-  SrcFQDN: "tls-client.example.test",
   SrcPortNumber: 47384,
   SrcInterfaceName: "port2",
   DstIpAddr: 50.18.221.132,
   DstHostname: "tls-server.example.test",
-  DstFQDN: "tls-server.example.test",
   DstPortNumber: 443,
   DstInterfaceName: "port3",
   NetworkSessionId: "11871",
@@ -456,9 +454,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_type: "multicast-policy",
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "noop",
       appcat: "unscanned",
     },
   },
@@ -522,9 +517,6 @@
       name: "Ubuntu",
     },
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
       appid: 34050,
       appcat: "Web.Client",
       countapp: 1,
@@ -575,9 +567,6 @@
     ocsf_app_name: "Web Management(HTTPS)",
     ocsf_firewall_rule_type: "local-in-policy",
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "noop",
       appcat: "unscanned",
     },
   },
@@ -626,11 +615,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_type: "sniffer",
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
-      transip: 0.0.0.0,
-      transport: 0,
       appcat: "unscanned",
       countips: 1,
       craction: 32768,
@@ -848,9 +832,6 @@
       name: "Ubuntu",
     },
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
       appid: 15893,
       appcat: "Web.Client",
       wanin: 313,
@@ -898,7 +879,6 @@
     ocsf_tunnel_interface_name: "test",
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/0000000000000000",
-      assignip: null,
       mode: "main",
       stage: 1,
     },
@@ -985,14 +965,12 @@
   DvcZone: "vdom1",
   SrcIpAddr: 10.1.100.11,
   SrcHostname: "web-client.example.test",
-  SrcFQDN: "web-client.example.test",
   SrcPortNumber: 44258,
   SrcInterfaceName: "port12",
   SrcUsername: "alice",
   SrcUsernameType: "Simple",
   DstIpAddr: 185.244.31.158,
   DstHostname: "morrishittu.ddns.net",
-  DstFQDN: "morrishittu.ddns.net",
   DstPortNumber: 80,
   DstInterfaceName: "port11",
   DstUsername: "web-service",
@@ -1017,7 +995,6 @@
       cat: 26,
       catdesc: "Malicious Websites",
       craction: 4194304,
-      poluuid: "9a660e16-4f17-4c7c-9ce8-71fb24ffca7a",
     },
     ocsf_http_request_headers: [
       {
@@ -1035,7 +1012,7 @@
     },
   },
   RuleName: "Web policy",
-  Url: "http://morrishittu.ddns.net/",
+  Url: "HTTP://morrishittu.ddns.net/",
   HttpRequestMethod: "POST",
   HttpVersion: null,
   HttpReferrer: "https://example.test/start",
@@ -1084,7 +1061,6 @@
   SrcInterfaceName: "port12",
   DstIpAddr: 185.244.31.158,
   DstHostname: "morrishittu.ddns.net",
-  DstFQDN: "morrishittu.ddns.net",
   DstPortNumber: 80,
   DstInterfaceName: "port11",
   NetworkSessionId: "381780",
@@ -1114,7 +1090,7 @@
     },
   },
   RuleName: "1",
-  Url: "http://morrishittu.ddns.net/",
+  Url: "HTTP://morrishittu.ddns.net/",
   HttpRequestMethod: "UNKNOWN",
   HttpVersion: null,
   HttpReferrer: null,
@@ -1193,9 +1169,6 @@
       name: "Ubuntu",
     },
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
       appcat: "unscanned",
       countweb: 1,
       craction: 4194304,
@@ -1252,7 +1225,6 @@
   DvcZone: "root",
   SrcIpAddr: 172.18.64.250,
   SrcHostname: "VAN-200957-PC",
-  SrcFQDN: "VAN-200957-PC",
   SrcPortNumber: null,
   DstIpAddr: null,
   DstHostname: null,
@@ -1292,7 +1264,6 @@
   DvcZone: "root",
   SrcIpAddr: 172.18.64.250,
   SrcHostname: "VAN-200957-PC",
-  SrcFQDN: "VAN-200957-PC",
   SrcPortNumber: null,
   DstIpAddr: null,
   DstHostname: null,
@@ -1477,9 +1448,6 @@
       name: "Linux",
     },
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
       appcat: "unscanned",
       countdns: 1,
       srcserver: 0,
@@ -1531,9 +1499,6 @@
     ocsf_firewall_rule_uid: "49871fae-7371-51e9-17b4-43c7ff119195",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
       appcat: "unscanned",
       countssh: 1,
     },
@@ -1601,7 +1566,6 @@
   DvcZone: "vdom1",
   SrcIpAddr: 10.1.100.11,
   SrcHostname: "smb-client.example.test",
-  SrcFQDN: "smb-client.example.test",
   SrcPortNumber: 56348,
   SrcInterfaceName: "port21",
   DstIpAddr: 172.16.200.44,
@@ -1753,7 +1717,6 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      trandisp: "snat",
       appcat: "unscanned",
       wanin: 43936,
       wanout: 710,
@@ -1815,7 +1778,6 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      trandisp: "snat",
       appcat: "unscanned",
       countips: 1,
       craction: 4096,
@@ -1901,7 +1863,6 @@
     ocsf_firewall_rule_uid: "d8ce7a90-7763-51e9-e2be-741294c96f31",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      trandisp: "snat",
       appid: 16072,
       appcat: "Video/Audio",
       appact: "drop-session",
@@ -1935,7 +1896,6 @@
   SrcZone: "lan",
   DstIpAddr: 195.8.215.136,
   DstHostname: "www.dailymotion.com",
-  DstFQDN: "www.dailymotion.com",
   DstPortNumber: 443,
   DstInterfaceName: "port9",
   DstZone: "wan",
@@ -1988,7 +1948,6 @@
   SrcZone: "lan",
   DstIpAddr: 195.8.215.136,
   DstHostname: "www.dailymotion.com",
-  DstFQDN: "www.dailymotion.com",
   DstPortNumber: 443,
   DstInterfaceName: "port9",
   DstZone: "wan",
@@ -2035,7 +1994,6 @@
   SrcZone: "lan",
   DstIpAddr: 195.8.215.136,
   DstHostname: "www.dailymotion.com",
-  DstFQDN: "www.dailymotion.com",
   DstPortNumber: 443,
   DstInterfaceName: "port9",
   DstZone: "wan",
@@ -2105,9 +2063,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "b3421bde-7763-51e9-8f6a-4a2b98d1e5c7",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      trandisp: "dnat",
-    },
   },
 }
 {
@@ -2155,9 +2110,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "e91b04c6-7763-51e9-b2d7-1f8c30ae5d42",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      trandisp: "noop",
-    },
   },
 }
 {
@@ -2210,7 +2162,6 @@
     ocsf_firewall_rule_uid: "a17c0a38-75c6-51e9-4c0d-d547347b63e5",
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      trandisp: "snat",
       appcat: "unscanned",
       wanin: 1779,
       wanout: 350,
@@ -2265,9 +2216,6 @@
   AdditionalFields: {
     ocsf_firewall_rule_uid: "c47f21aa-7763-51e9-9c15-6b1de4a72f30",
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      trandisp: "noop",
-    },
   },
 }
 {
@@ -2307,7 +2255,6 @@
     ocsf_tunnel_interface_name: "branch-office",
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/aabbccddeeff0011",
-      assignip: null,
       nextstat: 600,
     },
   },
@@ -2370,7 +2317,6 @@
   SrcGeoCountry: "United States",
   DstIpAddr: null,
   DstHostname: "10.212.134.200",
-  DstFQDN: "10.212.134.200",
   DstPortNumber: null,
   NetworkSessionId: "1234567890",
   NetworkDirection: "NA",
@@ -2379,11 +2325,6 @@
   DstBytes: null,
   SrcUsername: "jdoe",
   SrcUsernameType: "Simple",
-  AdditionalFields: {
-    ocsf_unmapped: {
-      reason: null,
-    },
-  },
 }
 {
   EventCount: 1,
@@ -2420,7 +2361,6 @@
     ocsf_tunnel_interface_name: "branch-office",
     ocsf_unmapped: {
       cookies: "9091f4d4837ea71c/aabbccddeeff0011",
-      assignip: null,
     },
   },
   SrcUsername: "vpnadmin",
@@ -2554,7 +2494,6 @@
   SrcGeoCountry: "United States",
   DstIpAddr: null,
   DstHostname: "10.212.134.200",
-  DstFQDN: "10.212.134.200",
   DstPortNumber: null,
   NetworkSessionId: "1234567890",
   NetworkDirection: "NA",
@@ -2650,7 +2589,6 @@
   DvcZone: "root",
   SrcIpAddr: 172.18.64.251,
   SrcHostname: "LAB-000123-PC",
-  SrcFQDN: "LAB-000123-PC",
   SrcPortNumber: null,
   DstIpAddr: null,
   DstHostname: null,
@@ -2693,7 +2631,6 @@
   SrcInterfaceName: "port12",
   DstIpAddr: 198.51.100.77,
   DstHostname: "198.51.100.77",
-  DstFQDN: "198.51.100.77",
   DstPortNumber: 80,
   DstInterfaceName: "port11",
   NetworkSessionId: "381790",
@@ -2723,7 +2660,7 @@
     },
   },
   RuleName: "1",
-  Url: "http://198.51.100.77/status",
+  Url: "HTTP://198.51.100.77/status",
   HttpRequestMethod: "UNKNOWN",
   HttpVersion: null,
   HttpReferrer: null,
@@ -2771,7 +2708,6 @@
   SrcZone: "lan",
   DstIpAddr: 203.0.113.9,
   DstHostname: "203.0.113.9",
-  DstFQDN: "203.0.113.9",
   DstPortNumber: 443,
   DstInterfaceName: "port9",
   DstZone: "wan",
@@ -2818,13 +2754,11 @@
   DvcZone: "vdom1",
   SrcIpAddr: 172.16.200.2,
   SrcHostname: "12345",
-  SrcFQDN: "12345",
   SrcPortNumber: 58020,
   SrcUsername: "10001",
   SrcUsernameType: "Simple",
   DstIpAddr: 23.59.154.35,
   DstHostname: "10.0.0.9",
-  DstFQDN: "10.0.0.9",
   DstPortNumber: 80,
   DstUsername: "20002",
   DstUsernameType: "Simple",
@@ -2849,12 +2783,7 @@
   AdditionalFields: {
     ocsf_firewall_rule_type: "policy",
     ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
-      unauthuser: 10001,
       unauthusersource: "kerberos",
-      dstunauthuser: 20002,
       dstunauthusersource: "ldap",
     },
   },
@@ -2883,11 +2812,9 @@
   DvcZone: "vdom1",
   SrcIpAddr: 172.16.200.2,
   SrcHostname: "192.168.1.7",
-  SrcFQDN: "192.168.1.7",
   SrcPortNumber: 58020,
   DstIpAddr: 23.59.154.35,
   DstHostname: "10.0.0.9",
-  DstFQDN: "10.0.0.9",
   DstPortNumber: 80,
   DstGeoCountry: "Canada",
   DvcInboundInterface: "port12",
@@ -2909,11 +2836,6 @@
   DvcAction: "Allow",
   AdditionalFields: {
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
-    },
   },
 }
 {
@@ -2951,7 +2873,6 @@
   SrcGeoRegion: "Berlin",
   DstIpAddr: 23.59.154.35,
   DstHostname: "server.example.test",
-  DstFQDN: "server.example.test",
   DstPortNumber: 80,
   DstMacAddr: "00:aa:bb:cc:dd:ff",
   DstZone: "Internet",
@@ -2990,14 +2911,8 @@
       version: "6.8",
     },
     ocsf_unmapped: {
-      policyid: 1,
-      trandisp: "snat+dnat",
-      unauthuser: "passive-source",
       unauthusersource: "kerberos",
-      dstunauthuser: "passive-destination",
       dstunauthusersource: "ldap",
-      srcmac: "00:11:22:33:44:55",
-      dstmac: "00:aa:bb:cc:dd:ee",
     },
   },
 }
@@ -3024,11 +2939,9 @@
   DvcZone: "vdom1",
   SrcIpAddr: 172.16.200.2,
   SrcHostname: "192.168.1.7",
-  SrcFQDN: "192.168.1.7",
   SrcPortNumber: 58020,
   DstIpAddr: 23.59.154.35,
   DstHostname: "10.0.0.9",
-  DstFQDN: "10.0.0.9",
   DstPortNumber: 80,
   DstGeoCountry: "Canada",
   DvcInboundInterface: "port12",
@@ -3049,11 +2962,6 @@
   DvcAction: "Allow",
   AdditionalFields: {
     ocsf_firewall_rule_type: "policy",
-    ocsf_unmapped: {
-      srcintfrole: null,
-      dstintfrole: null,
-      trandisp: "snat",
-    },
     ocsf_http_request_length: 123,
     ocsf_http_request_url: {
       hostname: "www.example.test",
@@ -3248,7 +3156,7 @@
   DeviceCustomString1Label: "OcsfClassName",
   DeviceCustomNumber1: 0,
   DeviceCustomNumber1Label: "OcsfClassUid",
-  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Signal Statistics\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan service=LTE sinr=\"7.0 dB\" rsrp=\"-89 dBm\" rsrq=\"-16 dB\" signalstrength=\"92 dBm\" rssi=-54 temperature=\"40 C\" apn=",
+  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Signal Statistics\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan service=LTE sinr=\"7.0 dB\" rsrp=\"-89 dBm\" rsrq=\"-16 dB\" signalstrength=\"92 dBm\" rssi=-54 temperature=\"40 C\"",
 }
 {
   TimeGenerated: 2019-02-20T02:09:45Z,
@@ -3460,7 +3368,7 @@
   DeviceCustomString1Label: "OcsfClassName",
   DeviceCustomNumber1: 0,
   DeviceCustomNumber1Label: "OcsfClassUid",
-  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Connecting\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan apn= service=",
+  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Connecting\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan",
 }
 {
   TimeGenerated: 2019-02-20T18:02:26Z,
@@ -3513,7 +3421,7 @@
   DeviceCustomString1Label: "OcsfClassName",
   DeviceCustomNumber1: 0,
   DeviceCustomNumber1Label: "OcsfClassUid",
-  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Connected\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan apn= service=LTE",
+  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Connected\" imei=359376060442770 imsi=302720502331361 iccid=8.930272040303814e+19 phonenumber=16045067526 carrier=Rogers plan=Rogers-plan service=LTE",
 }
 {
   TimeGenerated: 2019-02-20T18:33:56Z,
@@ -3566,7 +3474,7 @@
   DeviceCustomString1Label: "OcsfClassName",
   DeviceCustomNumber1: 0,
   DeviceCustomNumber1Label: "OcsfClassUid",
-  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Disconnected\" imei=359376060442770 imsi= iccid= phonenumber= carrier= plan= apn= service=LTE",
+  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"Cellular Disconnected\" imei=359376060442770 service=LTE",
 }
 {
   TimeGenerated: 2019-02-20T18:47:18Z,
@@ -3619,7 +3527,7 @@
   DeviceCustomString1Label: "OcsfClassName",
   DeviceCustomNumber1: 0,
   DeviceCustomNumber1Label: "OcsfClassUid",
-  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"SIM Change\" imei= slot=2",
+  AdditionalExtensions: "sn=FX04DN4N16002352 ip=11.11.11.2 action=\"SIM Change\" slot=2",
 }
 {
   TimeGenerated: 2019-02-20T18:57:49Z,
@@ -3780,7 +3688,7 @@
   DeviceCustomNumber1Label: "OcsfClassUid",
   DeviceCustomString2: "testcase822881",
   DeviceCustomString2Label: "EmailSubject",
-  AdditionalExtensions: "sessionid=439 proto=6 recipient=testpc3 attachment=no",
+  AdditionalExtensions: "attachment=no",
 }
 {
   TimeGenerated: 2019-04-09T10:41:18.647415130Z,
@@ -3835,7 +3743,7 @@
   DeviceCustomNumber1Label: "OcsfClassUid",
   DeviceCustomString2: "testcase822881",
   DeviceCustomString2Label: "EmailSubject",
-  AdditionalExtensions: "sessionid=439 proto=6 recipient=testpc3 attachment=no",
+  AdditionalExtensions: "attachment=no",
 }
 {
   TimeGenerated: 2019-05-10T16:53:19.208575235Z,

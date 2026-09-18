@@ -118,7 +118,7 @@ if $event.ocsf.observation_point_id? == 3 and $event.ocsf.network_observation_po
 // Source and destination endpoints.
 $event.asim.SrcIpAddr = $event.ocsf.src_endpoint?.ip?
 $event.asim.SrcHostname = $event.ocsf.src_endpoint?.name? else $event.ocsf.src_endpoint?.hostname?
-if $event.ocsf.src_endpoint?.hostname? != null {
+if $event.ocsf.src_endpoint?.domain? != null {
   $event.asim.SrcFQDN = $event.ocsf.src_endpoint.hostname
 }
 $event.asim.SrcPortNumber = $event.ocsf.src_endpoint?.port?
@@ -170,7 +170,7 @@ if $event.ocsf.src_endpoint?.location?.long? != null {
 
 $event.asim.DstIpAddr = $event.ocsf.dst_endpoint?.ip?
 $event.asim.DstHostname = $event.ocsf.dst_endpoint?.name? else $event.ocsf.dst_endpoint?.hostname?
-if $event.ocsf.dst_endpoint?.hostname? != null {
+if $event.ocsf.dst_endpoint?.domain? != null {
   $event.asim.DstFQDN = $event.ocsf.dst_endpoint.hostname
 }
 $event.asim.DstPortNumber = $event.ocsf.dst_endpoint?.port?

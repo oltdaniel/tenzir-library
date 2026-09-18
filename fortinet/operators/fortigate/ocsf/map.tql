@@ -196,4 +196,5 @@ if $event.ocsf.metadata.type == "utm" {
   fortinet::fortigate::ocsf::base event=$event
 }
 
-$ocsf = {...$event.ocsf, unmapped: $event.fortinet}
+fortinet::fortigate::ocsf::cleanup event=$event
+$ocsf = {...$event.ocsf, unmapped: $event.fortinet.drop_null_fields()}

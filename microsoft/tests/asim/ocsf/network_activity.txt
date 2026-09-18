@@ -34,7 +34,6 @@
   SrcUserIdType: "Other",
   DstIpAddr: 203.0.113.20,
   DstHostname: "server.example.org",
-  DstFQDN: "server.example.org",
   DstPortNumber: 443,
   DstZone: "wan",
   DstGeoCity: "Berlin",

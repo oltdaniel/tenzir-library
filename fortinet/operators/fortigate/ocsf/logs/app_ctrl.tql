@@ -25,6 +25,9 @@ $event.ocsf.type_uid = $event.ocsf.class_uid * 100 + $event.ocsf.activity_id
 drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
+if $event.fortinet.service? != null {
+  $event.ocsf.app_protocol_name = move $event.fortinet.service
+}
 if $event.ocsf.dst_endpoint.hostname? == null and $event.fortinet.hostname? != null {
   $event.ocsf.dst_endpoint.hostname = $event.fortinet.hostname.string()
 }

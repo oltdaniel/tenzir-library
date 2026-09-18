@@ -25,6 +25,10 @@ drop $event.fortinet.eventtype
 
 fortinet::fortigate::ocsf::network_endpoints event=$event
 
+if $event.fortinet.service? != null {
+  $event.ocsf.app_protocol_name = move $event.fortinet.service
+}
+
 // `login` is the remote username the session authenticates as. It belongs to
 // the destination endpoint's owner rather than its `uid`, which identifies the
 // host; ASIM reads the owner as DstUsername.
